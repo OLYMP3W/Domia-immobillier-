@@ -11,14 +11,14 @@ import { mockProperties, cities } from '@/data/mockData';
 import { SlidersHorizontal } from 'lucide-react';
 
 const Properties = () => {
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedType, setSelectedType] = useState('');
+  const [selectedCity, setSelectedCity] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [rooms, setRooms] = useState(0);
 
   const filteredProperties = mockProperties.filter(property => {
-    if (selectedCity && property.city !== selectedCity) return false;
-    if (selectedType && property.status !== selectedType) return false;
+    if (selectedCity && selectedCity !== 'all' && property.city !== selectedCity) return false;
+    if (selectedType && selectedType !== 'all' && property.status !== selectedType) return false;
     if (rooms > 0 && property.rooms < rooms) return false;
     return true;
   });
@@ -50,7 +50,7 @@ const Properties = () => {
                       <SelectValue placeholder="Toutes les villes" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Toutes</SelectItem>
+                      <SelectItem value="all">Toutes</SelectItem>
                       {cities.map(city => (
                         <SelectItem key={city} value={city}>{city}</SelectItem>
                       ))}
@@ -65,7 +65,7 @@ const Properties = () => {
                       <SelectValue placeholder="Tous" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tous</SelectItem>
+                      <SelectItem value="all">Tous</SelectItem>
                       <SelectItem value="rent">Location</SelectItem>
                       <SelectItem value="sell">Vente</SelectItem>
                     </SelectContent>
@@ -92,8 +92,8 @@ const Properties = () => {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    setSelectedCity('');
-                    setSelectedType('');
+                    setSelectedCity('all');
+                    setSelectedType('all');
                     setRooms(0);
                   }}
                 >

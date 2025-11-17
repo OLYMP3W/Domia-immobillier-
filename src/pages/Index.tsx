@@ -13,8 +13,8 @@ import { mockProperties, cities } from '@/data/mockData';
 const Index = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalType, setAuthModalType] = useState<'login' | 'register'>('login');
-  const [searchCity, setSearchCity] = useState('');
-  const [searchType, setSearchType] = useState('');
+  const [searchCity, setSearchCity] = useState('all');
+  const [searchType, setSearchType] = useState('all');
 
   const openAuthModal = (type: 'login' | 'register') => {
     setAuthModalType(type);
@@ -22,8 +22,8 @@ const Index = () => {
   };
 
   const filteredProperties = mockProperties.filter(property => {
-    if (searchCity && property.city !== searchCity) return false;
-    if (searchType && property.status !== searchType) return false;
+    if (searchCity && searchCity !== 'all' && property.city !== searchCity) return false;
+    if (searchType && searchType !== 'all' && property.status !== searchType) return false;
     return true;
   });
 
@@ -52,7 +52,7 @@ const Index = () => {
                     <SelectValue placeholder="Ville" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les villes</SelectItem>
+                    <SelectItem value="all">Toutes les villes</SelectItem>
                     {cities.map(city => (
                       <SelectItem key={city} value={city}>{city}</SelectItem>
                     ))}
@@ -66,7 +66,7 @@ const Index = () => {
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous</SelectItem>
+                    <SelectItem value="all">Tous</SelectItem>
                     <SelectItem value="rent">Location</SelectItem>
                     <SelectItem value="sell">Vente</SelectItem>
                   </SelectContent>
