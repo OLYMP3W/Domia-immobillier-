@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Home, User } from 'lucide-react';
+import { Home, User, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 
 interface AuthModalProps {
@@ -19,12 +20,12 @@ interface AuthModalProps {
 export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModalProps) => {
   const { login, register } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const [loginData, setLoginData] = useState({
     email: '',
     password: '',
-    role: 'tenant' as 'owner' | 'tenant'
   });
 
   const [registerData, setRegisterData] = useState({
@@ -39,18 +40,19 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
     e.preventDefault();
     setLoading(true);
     
-    const success = await login(loginData.email, loginData.password, loginData.role);
+    const result = await login(loginData.email, loginData.password);
     
-    if (success) {
+    if (result.success) {
       toast({
         title: 'Connexion réussie',
         description: `Bienvenue sur Domia !`,
       });
       onOpenChange(false);
+      setLoginData({ email: '', password: '' });
     } else {
       toast({
         title: 'Erreur de connexion',
-        description: 'Email ou mot de passe incorrect',
+        description: result.error || 'Email ou mot de passe incorrect',
         variant: 'destructive'
       });
     }
@@ -69,21 +71,37 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
       });
       return;
     }
+
+    if (registerData.password.length < 6) {
+      toast({
+        title: 'Erreur',
+        description: 'Le mot de passe doit contenir au moins 6 caractères',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     setLoading(true);
-    const success = await register(
+    const result = await register(
       registerData.fullname,
       registerData.email,
       registerData.password,
       registerData.role
     );
     
-    if (success) {
+    if (result.success) {
       toast({
         title: 'Inscription réussie',
         description: 'Votre compte a été créé avec succès !',
       });
       onOpenChange(false);
+      setRegisterData({ fullname: '', email: '', password: '', confirmPassword: '', role: 'tenant' });
+    } else {
+      toast({
+        title: 'Erreur',
+        description: result.error || 'Une erreur est survenue',
+        variant: 'destructive'
+      });
     }
     
     setLoading(false);
@@ -111,30 +129,6 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
           <TabsContent value="login" className="space-y-4">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label>Type de compte</Label>
-                <RadioGroup
-                  value={loginData.role}
-                  onValueChange={(value) => setLoginData({ ...loginData, role: value as 'owner' | 'tenant' })}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="tenant" id="login-tenant" />
-                    <Label htmlFor="login-tenant" className="flex items-center gap-2 cursor-pointer">
-                      <User className="h-4 w-4" />
-                      Locataire
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="owner" id="login-owner" />
-                    <Label htmlFor="login-owner" className="flex items-center gap-2 cursor-pointer">
-                      <Home className="h-4 w-4" />
-                      Propriétaire
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="login-email">Email</Label>
                 <Input
                   id="login-email"
@@ -143,6 +137,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                   value={loginData.email}
                   onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -154,16 +149,20 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
               <Button type="submit" className="w-full gradient-gold" disabled={loading}>
-                {loading ? 'Connexion...' : 'Se connecter'}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connexion...
+                  </>
+                ) : (
+                  'Se connecter'
+                )}
               </Button>
-              
-              <p className="text-xs text-muted-foreground text-center">
-                Compte démo: proprio@domia.ga / locataire@domia.ga (mot de passe: password)
-              </p>
             </form>
           </TabsContent>
 
@@ -175,6 +174,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                   value={registerData.role}
                   onValueChange={(value) => setRegisterData({ ...registerData, role: value as 'owner' | 'tenant' })}
                   className="flex gap-4"
+                  disabled={loading}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="tenant" id="register-tenant" />
@@ -200,6 +200,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                   value={registerData.fullname}
                   onChange={(e) => setRegisterData({ ...registerData, fullname: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -212,6 +213,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                   value={registerData.email}
                   onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -223,6 +225,8 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                   value={registerData.password}
                   onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                   required
+                  disabled={loading}
+                  minLength={6}
                 />
               </div>
 
@@ -234,11 +238,19 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                   value={registerData.confirmPassword}
                   onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
               <Button type="submit" className="w-full gradient-gold" disabled={loading}>
-                {loading ? 'Inscription...' : "S'inscrire"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Inscription...
+                  </>
+                ) : (
+                  "S'inscrire"
+                )}
               </Button>
             </form>
           </TabsContent>

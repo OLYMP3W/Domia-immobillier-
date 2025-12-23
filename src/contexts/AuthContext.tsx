@@ -1,76 +1,167 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  fullname: string;
-  email: string;
-  role: 'owner' | 'tenant';
-  profilePic: string;
-}
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { Profile, UserRole } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
+  profile: Profile | null;
+  role: 'owner' | 'tenant' | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string, role: 'owner' | 'tenant') => Promise<boolean>;
-  register: (fullname: string, email: string, password: string, role: 'owner' | 'tenant') => Promise<boolean>;
-  logout: () => void;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (fullname: string, email: string, password: string, role: 'owner' | 'tenant') => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo
-const mockUsers = [
-  { id: 'owner_1', email: 'proprio@domia.ga', password: 'password', role: 'owner' as const, fullname: 'Jean Dupont', profilePic: '/placeholder.svg' },
-  { id: 'tenant_1', email: 'locataire@domia.ga', password: 'password', role: 'tenant' as const, fullname: 'Aïcha Locataire', profilePic: '/placeholder.svg' }
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [role, setRole] = useState<'owner' | 'tenant' | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUserData = async (userId: string) => {
+    try {
+      // Fetch profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData as Profile);
+      }
+
+      // Fetch role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (roleData) {
+        setRole(roleData.role as 'owner' | 'tenant');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('domia_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Defer Supabase calls with setTimeout
+          setTimeout(() => {
+            fetchUserData(session.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+          setRole(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserData(session.user.id);
+      }
+      
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string, role: 'owner' | 'tenant') => {
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password && u.role === role);
-    if (foundUser) {
-      const userData = {
-        id: foundUser.id,
-        fullname: foundUser.fullname,
-        email: foundUser.email,
-        role: foundUser.role,
-        profilePic: foundUser.profilePic
-      };
-      setUser(userData);
-      localStorage.setItem('domia_user', JSON.stringify(userData));
-      return true;
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchUserData(user.id);
     }
-    return false;
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   };
 
   const register = async (fullname: string, email: string, password: string, role: 'owner' | 'tenant') => {
-    const newUser = {
-      id: `${role}_${Date.now()}`,
-      fullname,
-      email,
-      role,
-      profilePic: '/placeholder.svg'
-    };
-    setUser(newUser);
-    localStorage.setItem('domia_user', JSON.stringify(newUser));
-    return true;
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            fullname,
+            role,
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          return { success: false, error: 'Cet email est déjà utilisé' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('domia_user');
+    setSession(null);
+    setProfile(null);
+    setRole(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile,
+      role,
+      isAuthenticated: !!user,
+      isLoading,
+      login,
+      register,
+      logout,
+      refreshProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );
