@@ -2,27 +2,38 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Search, Bell, MessageSquare } from 'lucide-react';
+import { Heart, Search, Bell, MessageSquare, Loader2, Home } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { PropertyCard } from '@/components/PropertyCard';
-import { mockProperties } from '@/data/mockData';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useSavedSearches } from '@/hooks/useSavedSearches';
+import { useTenantStats } from '@/hooks/useStats';
 
 const TenantDashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { profile, role, isAuthenticated, isLoading } = useAuth();
+  const { data: favorites = [], isLoading: favoritesLoading } = useFavorites();
+  const { data: savedSearches = [] } = useSavedSearches();
+  const { data: stats } = useTenantStats();
 
-  if (!isAuthenticated || user?.role !== 'tenant') {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || role !== 'tenant') {
     return <Navigate to="/" replace />;
   }
 
-  const stats = [
-    { label: 'Favoris', value: '8', icon: Heart, color: 'text-red-600' },
-    { label: 'Recherches sauvegardées', value: '3', icon: Search, color: 'text-blue-600' },
-    { label: 'Notifications', value: '5', icon: Bell, color: 'text-yellow-600' },
-    { label: 'Messages', value: '4', icon: MessageSquare, color: 'text-green-600' },
+  const statsData = [
+    { label: 'Favoris', value: stats?.favorites || 0, icon: Heart, color: 'text-red-600' },
+    { label: 'Recherches sauvegardées', value: stats?.savedSearches || 0, icon: Search, color: 'text-blue-600' },
+    { label: 'Notifications', value: stats?.notifications || 0, icon: Bell, color: 'text-yellow-600' },
+    { label: 'Messages', value: stats?.messages || 0, icon: MessageSquare, color: 'text-green-600' },
   ];
-
-  const favoriteProperties = mockProperties.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -31,12 +42,11 @@ const TenantDashboard = () => {
       <div className="container py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Tableau de bord Locataire</h1>
-          <p className="text-muted-foreground">Bienvenue, {user?.fullname}</p>
+          <p className="text-muted-foreground">Bienvenue, {profile?.fullname}</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          {stats.map((stat) => {
+          {statsData.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.label} className="hover-lift cursor-pointer">
@@ -54,41 +64,65 @@ const TenantDashboard = () => {
           })}
         </div>
 
-        {/* Saved Searches */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Recherches sauvegardées</CardTitle>
             <CardDescription>Vos critères de recherche enregistrés</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {['Appartement T2 - Libreville', 'Villa avec jardin - Port Gentil', 'Studio meublé - Franceville'].map((search, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Search className="h-5 w-5 text-gold" />
-                    <span className="font-medium">{search}</span>
+            {savedSearches.length === 0 ? (
+              <div className="text-center py-6">
+                <Search className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                <p className="text-muted-foreground">Aucune recherche sauvegardée</p>
+                <Button variant="outline" className="mt-3" asChild>
+                  <Link to="/properties">Explorer les propriétés</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {savedSearches.map((search) => (
+                  <div key={search.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Search className="h-5 w-5 text-gold" />
+                      <span className="font-medium">{search.name}</span>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/properties?city=${search.city || ''}&type=${search.type || ''}`}>
+                        Voir résultats
+                      </Link>
+                    </Button>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Voir résultats
-                  </Button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Favorites */}
         <Card>
           <CardHeader>
             <CardTitle>Mes favoris</CardTitle>
             <CardDescription>Les propriétés que vous avez aimées</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {favoriteProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
+            {favoritesLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : favorites.length === 0 ? (
+              <div className="text-center py-8">
+                <Heart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Aucun favori pour le moment</p>
+                <Button className="mt-4" variant="outline" asChild>
+                  <Link to="/properties">Découvrir les propriétés</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {favorites.map((favorite) => (
+                  favorite.property && <PropertyCard key={favorite.id} property={favorite.property} />
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
