@@ -4,23 +4,22 @@ import { PropertyCard } from '@/components/PropertyCard';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockProperties, cities } from '@/data/mockData';
-import { SlidersHorizontal } from 'lucide-react';
+import { useProperties } from '@/hooks/useProperties';
+import { SlidersHorizontal, Home, Loader2 } from 'lucide-react';
+
+const cities = ['Libreville', 'Port Gentil', 'Franceville', 'Oyem', 'Moanda'];
 
 const Properties = () => {
   const [selectedCity, setSelectedCity] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 100]);
   const [rooms, setRooms] = useState(0);
 
-  const filteredProperties = mockProperties.filter(property => {
-    if (selectedCity && selectedCity !== 'all' && property.city !== selectedCity) return false;
-    if (selectedType && selectedType !== 'all' && property.status !== selectedType) return false;
-    if (rooms > 0 && property.rooms < rooms) return false;
-    return true;
+  const { data: properties = [], isLoading } = useProperties({
+    city: selectedCity !== 'all' ? selectedCity : undefined,
+    type: selectedType !== 'all' ? selectedType : undefined,
+    minRooms: rooms > 0 ? rooms : undefined,
   });
 
   return (
@@ -30,7 +29,7 @@ const Properties = () => {
       <div className="container py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Toutes les propriétés</h1>
-          <p className="text-muted-foreground">{filteredProperties.length} propriétés disponibles</p>
+          <p className="text-muted-foreground">{properties.length} propriétés disponibles</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-4">
@@ -67,7 +66,9 @@ const Properties = () => {
                     <SelectContent>
                       <SelectItem value="all">Tous</SelectItem>
                       <SelectItem value="rent">Location</SelectItem>
-                      <SelectItem value="sell">Vente</SelectItem>
+                      <SelectItem value="apartment">Appartement</SelectItem>
+                      <SelectItem value="villa">Villa</SelectItem>
+                      <SelectItem value="studio">Studio</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -105,14 +106,19 @@ const Properties = () => {
 
           {/* Properties Grid */}
           <div className="lg:col-span-3">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-              {filteredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-
-            {filteredProperties.length === 0 && (
+            {isLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-gold" />
+              </div>
+            ) : properties.length > 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {properties.map((property) => (
+                  <PropertyCard key={property.id} property={property} />
+                ))}
+              </div>
+            ) : (
               <div className="py-20 text-center">
+                <Home className="mx-auto mb-4 h-16 w-16 text-muted-foreground opacity-50" />
                 <h3 className="mb-2 text-xl font-semibold">Aucune propriété trouvée</h3>
                 <p className="text-muted-foreground">Essayez de modifier vos filtres</p>
               </div>
