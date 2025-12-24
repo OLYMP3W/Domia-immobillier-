@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Search, MapPin, Home as HomeIcon, TrendingUp } from 'lucide-react';
+import { Search, Home as HomeIcon, TrendingUp, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PropertyCard } from '@/components/PropertyCard';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockProperties, cities } from '@/data/mockData';
+import { useProperties } from '@/hooks/useProperties';
+import { usePublicStats } from '@/hooks/useStats';
+
+const cities = ['Libreville', 'Port Gentil', 'Franceville', 'Oyem', 'Moanda'];
 
 const Index = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -16,16 +18,17 @@ const Index = () => {
   const [searchCity, setSearchCity] = useState('all');
   const [searchType, setSearchType] = useState('all');
 
+  const { data: properties = [], isLoading } = useProperties({
+    city: searchCity !== 'all' ? searchCity : undefined,
+    type: searchType !== 'all' ? searchType : undefined,
+  });
+
+  const { data: stats } = usePublicStats();
+
   const openAuthModal = (type: 'login' | 'register') => {
     setAuthModalType(type);
     setAuthModalOpen(true);
   };
-
-  const filteredProperties = mockProperties.filter(property => {
-    if (searchCity && searchCity !== 'all' && property.city !== searchCity) return false;
-    if (searchType && searchType !== 'all' && property.status !== searchType) return false;
-    return true;
-  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,14 +71,17 @@ const Index = () => {
                   <SelectContent>
                     <SelectItem value="all">Tous</SelectItem>
                     <SelectItem value="rent">Location</SelectItem>
-                    <SelectItem value="sell">Vente</SelectItem>
+                    <SelectItem value="apartment">Appartement</SelectItem>
+                    <SelectItem value="villa">Villa</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <Button className="gradient-gold md:w-auto" size="lg">
-                <Search className="mr-2 h-5 w-5" />
-                Rechercher
+              <Button className="gradient-gold md:w-auto" size="lg" asChild>
+                <Link to="/properties">
+                  <Search className="mr-2 h-5 w-5" />
+                  Rechercher
+                </Link>
               </Button>
             </div>
           </div>
@@ -87,15 +93,15 @@ const Index = () => {
         <div className="container">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="text-center animate-fade-in">
-              <div className="mb-2 text-4xl font-bold text-gold">500+</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.properties || 0}</div>
               <div className="text-sm text-muted-foreground">Annonces actives</div>
             </div>
             <div className="text-center animate-fade-in delay-1">
-              <div className="mb-2 text-4xl font-bold text-gold">200+</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.owners || 0}</div>
               <div className="text-sm text-muted-foreground">Propriétaires</div>
             </div>
             <div className="text-center animate-fade-in delay-2">
-              <div className="mb-2 text-4xl font-bold text-gold">1000+</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.tenants || 0}</div>
               <div className="text-sm text-muted-foreground">Locataires actifs</div>
             </div>
             <div className="text-center animate-fade-in delay-3">
@@ -122,17 +128,21 @@ const Index = () => {
             </Button>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProperties.slice(0, 6).map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
-
-          {filteredProperties.length === 0 && (
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-gold" />
+            </div>
+          ) : properties.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {properties.slice(0, 6).map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+          ) : (
             <div className="py-20 text-center">
               <HomeIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground opacity-50" />
-              <h3 className="mb-2 text-xl font-semibold">Aucune propriété trouvée</h3>
-              <p className="text-muted-foreground">Essayez de modifier vos critères de recherche</p>
+              <h3 className="mb-2 text-xl font-semibold">Aucune propriété disponible</h3>
+              <p className="text-muted-foreground">Les nouvelles annonces apparaîtront ici</p>
             </div>
           )}
         </div>
