@@ -298,14 +298,14 @@ const CreateProperty = () => {
                 <h3 className="text-lg font-semibold">Image</h3>
                 
                 <div>
-                  <Label htmlFor="imageUrl">URL de l'image principale</Label>
-                  <Input
-                    id="imageUrl"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://exemple.com/image.jpg"
-                    className="mt-1"
-                  />
+                 <Label htmlFor="image">Image principale</Label>
+<Input
+  type="file"
+  id="image"
+  accept="image/*"
+  onChange={(e) => setImage(e.target.files[0])}
+  className="mt-1"
+/>
                   <p className="text-xs text-muted-foreground mt-1">
                     Entrez l'URL d'une image pour votre annonce
                   </p>
