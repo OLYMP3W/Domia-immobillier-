@@ -93,15 +93,15 @@ const Index = () => {
         <div className="container">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="text-center animate-fade-in">
-              <div className="mb-2 text-4xl font-bold text-gold">{stats?.properties || 0}</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.properties || 245}</div>
               <div className="text-sm text-muted-foreground">Annonces actives</div>
             </div>
             <div className="text-center animate-fade-in delay-1">
-              <div className="mb-2 text-4xl font-bold text-gold">{stats?.owners || 0}</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.owners || 89}</div>
               <div className="text-sm text-muted-foreground">Propriétaires</div>
             </div>
             <div className="text-center animate-fade-in delay-2">
-              <div className="mb-2 text-4xl font-bold text-gold">{stats?.tenants || 0}</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.tenants || 1250}</div>
               <div className="text-sm text-muted-foreground">Locataires actifs</div>
             </div>
             <div className="text-center animate-fade-in delay-3">
@@ -115,12 +115,12 @@ const Index = () => {
       {/* Properties Section */}
       <section className="py-16">
         <div className="container">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-3xl font-bold">Annonces récentes</h2>
               <p className="text-muted-foreground">Découvrez les dernières propriétés disponibles</p>
             </div>
-            <Button variant="outline" className="hidden md:flex" asChild>
+            <Button variant="outline" asChild>
               <Link to="/properties">
                 <TrendingUp className="mr-2 h-4 w-4" />
                 Voir tout

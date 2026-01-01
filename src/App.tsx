@@ -10,6 +10,10 @@ import PropertyDetail from "./pages/PropertyDetail";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import TenantDashboard from "./pages/TenantDashboard";
 import CreateProperty from "./pages/CreateProperty";
+import Settings from "./pages/Settings";
+import Messages from "./pages/Messages";
+import Notifications from "./pages/Notifications";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +32,10 @@ const App = () => (
             <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/dashboard/owner" element={<OwnerDashboard />} />
             <Route path="/dashboard/tenant" element={<TenantDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/install" element={<Install />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

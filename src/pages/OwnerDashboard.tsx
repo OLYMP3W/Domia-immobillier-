@@ -88,6 +88,7 @@ const OwnerDashboard = () => {
   ];
 
   const quickActions = [
+    { label: 'Accueil', icon: Home, href: '/' },
     { label: 'Nouvelle annonce', icon: Plus, href: '/property/new', primary: true },
     { label: 'Messages', icon: MessageSquare, href: '/messages', badge: unreadMessages },
     { label: 'Notifications', icon: Bell, href: '/notifications', badge: unreadNotifications },
@@ -133,7 +134,7 @@ const OwnerDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-5 mb-8">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
