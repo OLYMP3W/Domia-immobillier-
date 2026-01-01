@@ -34,9 +34,8 @@ export const Footer = () => {
             <h3 className="font-bold mb-4">Navigation</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/" className="hover:text-gold transition-colors">Accueil</Link></li>
-              <li><Link to="/#" className="hover:text-gold transition-colors">Rechercher</Link></li>
-              <li><Link to="/#" className="hover:text-gold transition-colors">À propos</Link></li>
-              <li><Link to="/#" className="hover:text-gold transition-colors">Blog</Link></li>
+              <li><Link to="/properties" className="hover:text-gold transition-colors">Rechercher</Link></li>
+              <li><Link to="/install" className="hover:text-gold transition-colors">Télécharger l'app</Link></li>
             </ul>
           </div>
 
@@ -44,10 +43,8 @@ export const Footer = () => {
           <div>
             <h3 className="font-bold mb-4">Services</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/#" className="hover:text-gold transition-colors">Publier une annonce</Link></li>
-              <li><Link to="/#" className="hover:text-gold transition-colors">Devenir premium</Link></li>
-              <li><Link to="/#" className="hover:text-gold transition-colors">Aide & Support</Link></li>
-              <li><Link to="/#" className="hover:text-gold transition-colors">Contact</Link></li>
+              <li><Link to="/property/new" className="hover:text-gold transition-colors">Publier une annonce</Link></li>
+              <li><Link to="/settings" className="hover:text-gold transition-colors">Paramètres</Link></li>
             </ul>
           </div>
 
@@ -61,7 +58,7 @@ export const Footer = () => {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-gold" />
-                <span>+241 XX XX XX XX</span>
+                <a href="tel:+241076467692" className="hover:text-gold transition-colors">+241 076 46 76 92</a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-gold" />

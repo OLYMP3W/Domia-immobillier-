@@ -8,11 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Upload, Home } from 'lucide-react';
+import { ArrowLeft, Loader2, Upload, Home, X, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { useCreateProperty, useAddPropertyImage } from '@/hooks/useProperties';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const cities = ['Libreville', 'Port Gentil', 'Franceville', 'Oyem', 'Moanda'];
 const propertyTypes = [
@@ -23,8 +24,10 @@ const propertyTypes = [
   { value: 'duplex', label: 'Duplex' },
 ];
 
+const MAX_IMAGES = 20;
+
 const CreateProperty = () => {
-  const { role, isAuthenticated, isLoading } = useAuth();
+  const { user, role, isAuthenticated, isLoading } = useAuth();
   const createProperty = useCreateProperty();
   const addImage = useAddPropertyImage();
   const { toast } = useToast();
@@ -45,7 +48,9 @@ const CreateProperty = () => {
     is_published: true,
   });
 
-  const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   if (isLoading) {
     return (
@@ -58,6 +63,68 @@ const CreateProperty = () => {
   if (!isAuthenticated || role !== 'owner') {
     return <Navigate to="/" replace />;
   }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    const totalImages = images.length + newFiles.length;
+
+    if (totalImages > MAX_IMAGES) {
+      toast({
+        title: 'Limite atteinte',
+        description: `Vous pouvez ajouter maximum ${MAX_IMAGES} images`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Generate previews
+    const newPreviews: string[] = [];
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newPreviews.push(reader.result as string);
+        if (newPreviews.length === newFiles.length) {
+          setImagePreviews(prev => [...prev, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setImages(prev => [...prev, ...newFiles]);
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImage = async (file: File, propertyId: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${propertyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('property-images')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return null;
+      }
+
+      const { data } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +139,8 @@ const CreateProperty = () => {
     }
 
     try {
+      setIsUploading(true);
+
       const property = await createProperty.mutateAsync({
         title: formData.title,
         description: formData.description || null,
@@ -87,13 +156,18 @@ const CreateProperty = () => {
         is_published: formData.is_published,
       });
 
-      // Add image if provided
-      if (imageUrl && property.id) {
-        await addImage.mutateAsync({
-          propertyId: property.id,
-          url: imageUrl,
-          isPrimary: true,
-        });
+      // Upload images
+      if (images.length > 0 && property.id) {
+        for (let i = 0; i < images.length; i++) {
+          const imageUrl = await uploadImage(images[i], property.id);
+          if (imageUrl) {
+            await addImage.mutateAsync({
+              propertyId: property.id,
+              url: imageUrl,
+              isPrimary: i === 0,
+            });
+          }
+        }
       }
 
       toast({
@@ -103,11 +177,14 @@ const CreateProperty = () => {
 
       navigate('/dashboard/owner');
     } catch (error) {
+      console.error('Error creating property:', error);
       toast({
         title: 'Erreur',
         description: 'Une erreur est survenue lors de la création',
         variant: 'destructive',
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -162,7 +239,7 @@ const CreateProperty = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="type">Type de bien *</Label>
                     <Select 
@@ -198,7 +275,7 @@ const CreateProperty = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Localisation</h3>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="city">Ville *</Label>
                     <Select 
@@ -293,23 +370,58 @@ const CreateProperty = () => {
                 </div>
               </div>
 
-              {/* Image */}
+              {/* Images */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Image</h3>
+                <h3 className="text-lg font-semibold">Photos ({images.length}/{MAX_IMAGES})</h3>
                 
-                <div>
-                 <Label htmlFor="image">Image principale</Label>
-<Input
-  type="file"
-  id="image"
-  accept="image/*"
-  onChange={(e) => setImage(e.target.files[0])}
-  className="mt-1"
-/>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Entrez l'URL d'une image pour votre annonce
-                  </p>
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    id="images"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="images"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Upload className="h-10 w-10 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Cliquez pour ajouter des photos depuis votre galerie
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Maximum {MAX_IMAGES} images
+                    </span>
+                  </label>
                 </div>
+
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        {index === 0 && (
+                          <span className="absolute top-1 left-1 bg-gold text-white text-xs px-2 py-0.5 rounded">
+                            Principal
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Options */}
@@ -346,19 +458,19 @@ const CreateProperty = () => {
               </div>
 
               {/* Submit */}
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button type="button" variant="outline" className="flex-1" asChild>
                   <Link to="/dashboard/owner">Annuler</Link>
                 </Button>
                 <Button 
                   type="submit" 
                   className="flex-1 gradient-gold"
-                  disabled={createProperty.isPending}
+                  disabled={createProperty.isPending || isUploading}
                 >
-                  {createProperty.isPending ? (
+                  {(createProperty.isPending || isUploading) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Création...
+                      {isUploading ? 'Upload des images...' : 'Création...'}
                     </>
                   ) : (
                     'Créer l\'annonce'
