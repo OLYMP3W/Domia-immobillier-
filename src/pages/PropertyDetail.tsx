@@ -93,7 +93,6 @@ const PropertyDetail = () => {
   }
 
   const images = property.images?.map(img => img.url) || [];
-  const defaultImage = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800';
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,27 +111,34 @@ const PropertyDetail = () => {
         <div className="grid gap-6 lg:gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             {/* Image Gallery */}
-            <Carousel className="w-full">
-              <CarouselContent>
-                {(images.length > 0 ? images : [defaultImage]).map((image, index) => (
-                  <CarouselItem key={index}>
-                    <div className="relative aspect-video overflow-hidden rounded-xl">
-                      <img
-                        src={image}
-                        alt={`${property.title} - ${index + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              {images.length > 1 && (
-                <>
-                  <CarouselPrevious className="left-2" />
-                  <CarouselNext className="right-2" />
-                </>
-              )}
-            </Carousel>
+            {images.length > 0 ? (
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {images.map((image, index) => (
+                    <CarouselItem key={index}>
+                      <div className="relative aspect-video overflow-hidden rounded-xl">
+                        <img
+                          src={image}
+                          alt={`${property.title} - ${index + 1}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {images.length > 1 && (
+                  <>
+                    <CarouselPrevious className="left-2" />
+                    <CarouselNext className="right-2" />
+                  </>
+                )}
+              </Carousel>
+            ) : (
+              <div className="relative aspect-video overflow-hidden rounded-xl bg-muted flex items-center justify-center">
+                <Home className="h-16 w-16 text-muted-foreground/30" />
+              </div>
+            )}
 
             {/* Title and Info */}
             <div>

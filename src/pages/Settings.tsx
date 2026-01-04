@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,11 +19,22 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   
   const [formData, setFormData] = useState({
-    fullname: profile?.fullname || '',
-    phone: profile?.phone || '',
+    fullname: '',
+    phone: '',
     email_notifications: true,
     push_notifications: true,
   });
+
+  // Update form when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        fullname: profile.fullname || '',
+        phone: profile.phone || '',
+      }));
+    }
+  }, [profile]);
 
   if (isLoading) {
     return (
