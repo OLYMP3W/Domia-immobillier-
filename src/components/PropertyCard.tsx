@@ -45,8 +45,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
   };
 
   const primaryImage = property.images?.find(img => img.is_primary)?.url || 
-                       property.images?.[0]?.url || 
-                       'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9';
+                       property.images?.[0]?.url;
 
   const formatPrice = (price: number, type: string) => {
     const formatted = price.toLocaleString('fr-FR');
@@ -55,12 +54,19 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
 
   return (
     <Card className="group overflow-hidden hover-lift animate-fade-in">
-      <div className="relative aspect-video overflow-hidden">
-        <img
-          src={primaryImage}
-          alt={property.title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-        />
+      <div className="relative aspect-video overflow-hidden bg-muted">
+        {primaryImage ? (
+          <img
+            src={primaryImage}
+            alt={property.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center bg-muted">
+            <HomeIcon className="h-12 w-12 text-muted-foreground/30" />
+          </div>
+        )}
         {property.is_premium && (
           <Badge className="absolute top-3 left-3 gradient-gold border-0">
             Premium
