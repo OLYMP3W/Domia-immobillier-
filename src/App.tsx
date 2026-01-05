@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
+import { LinkInterceptor } from "@/components/LinkInterceptor";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
@@ -15,6 +16,7 @@ import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -24,6 +26,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <HashRouter>
+          <LinkInterceptor />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/properties" element={<Properties />} />
@@ -44,3 +47,4 @@ const App = () => (
 );
 
 export default App;
+
