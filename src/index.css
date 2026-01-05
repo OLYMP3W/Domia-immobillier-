@@ -124,11 +124,15 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  :where(a, button, [role="button"]) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
   }
