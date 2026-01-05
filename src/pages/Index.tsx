@@ -120,7 +120,7 @@ const Index = () => {
               <h2 className="text-3xl font-bold">Annonces récentes</h2>
               <p className="text-muted-foreground">Découvrez les dernières propriétés disponibles</p>
             </div>
-            <Button variant="outline" asChild>
+            <Button variant="secondary" asChild>
               <Link to="/properties">
                 <TrendingUp className="mr-2 h-4 w-4" />
                 Voir tout

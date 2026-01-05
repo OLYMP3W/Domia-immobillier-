@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize, Send } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -7,10 +8,19 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { useProperty } from '@/hooks/useProperties';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
+import { useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Carousel,
   CarouselContent,
@@ -29,6 +39,10 @@ const PropertyDetail = () => {
   const { data: isFavorite = false } = useIsFavorite(id || '');
   const toggleFavorite = useToggleFavorite();
 
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageContent, setMessageContent] = useState('');
+  const sendMessage = useSendMessage();
+
   const handleToggleFavorite = () => {
     if (!isAuthenticated) {
       toast({
@@ -40,6 +54,42 @@ const PropertyDetail = () => {
     }
     if (id) {
       toggleFavorite.mutate(id);
+    }
+  };
+
+  const handleOpenMessageDialog = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Connexion requise',
+        description: 'Connectez-vous pour envoyer un message',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setMessageDialogOpen(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageContent.trim() || !property?.owner_id) return;
+
+    try {
+      await sendMessage.mutateAsync({
+        receiverId: property.owner_id,
+        propertyId: property.id,
+        content: messageContent,
+      });
+      toast({
+        title: 'Message envoyé',
+        description: 'Votre message a été envoyé au propriétaire',
+      });
+      setMessageDialogOpen(false);
+      setMessageContent('');
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: "Impossible d'envoyer le message",
+        variant: 'destructive',
+      });
     }
   };
 
@@ -238,11 +288,9 @@ const PropertyDetail = () => {
                 <Separator className="my-4" />
 
                 <div className="space-y-3">
-                  <Button className="w-full gradient-gold" asChild>
-                    <Link to={`/messages?property=${property.id}`}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Envoyer un message
-                    </Link>
+                  <Button className="w-full gradient-gold" onClick={handleOpenMessageDialog}>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Envoyer un message
                   </Button>
                   {property.owner?.phone && (
                     <Button variant="outline" className="w-full" asChild>
@@ -273,6 +321,50 @@ const PropertyDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Message Dialog */}
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Envoyer un message</DialogTitle>
+            <DialogDescription>
+              Contactez {property.owner?.fullname || 'le propriétaire'} à propos de cette annonce
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+              <Avatar>
+                <AvatarImage src={property.owner?.avatar_url || ''} />
+                <AvatarFallback className="bg-gold text-white">
+                  {property.owner?.fullname?.charAt(0) || 'P'}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-semibold">{property.owner?.fullname || 'Propriétaire'}</div>
+                <div className="text-sm text-muted-foreground">{property.title}</div>
+              </div>
+            </div>
+            <Textarea
+              placeholder="Écrivez votre message ici..."
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              rows={4}
+            />
+            <Button 
+              className="w-full gradient-gold" 
+              onClick={handleSendMessage}
+              disabled={sendMessage.isPending || !messageContent.trim()}
+            >
+              {sendMessage.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              Envoyer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
