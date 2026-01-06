@@ -50,18 +50,18 @@ export const useMessages = () => {
 
       if (error) throw error;
       
-      // Fetch profiles for senders and receivers
+      // Fetch public profiles for senders and receivers (no email/phone exposed)
       const userIds = [...new Set([
         ...data?.map(m => m.sender_id) || [],
         ...data?.map(m => m.receiver_id) || [],
       ])];
       
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
+      const { data: publicProfiles } = await supabase
+        .from('public_profiles')
+        .select('user_id, fullname, avatar_url')
         .in('user_id', userIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const profileMap = new Map(publicProfiles?.map(p => [p.user_id, { fullname: p.fullname, avatar_url: p.avatar_url }]) || []);
 
       return (data || []).map(message => ({
         ...message,

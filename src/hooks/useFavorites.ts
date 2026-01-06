@@ -25,14 +25,14 @@ export const useFavorites = () => {
 
       if (error) throw error;
       
-      // Fetch owner profiles for properties
+      // Fetch owner public profiles for properties (no email/phone)
       const ownerIds = [...new Set(data?.map(f => f.property?.owner_id).filter(Boolean) || [])];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
+      const { data: publicProfiles } = await supabase
+        .from('public_profiles')
+        .select('user_id, fullname, avatar_url')
         .in('user_id', ownerIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const profileMap = new Map(publicProfiles?.map(p => [p.user_id, { fullname: p.fullname, avatar_url: p.avatar_url }]) || []);
 
       return (data || []).map(favorite => ({
         ...favorite,
