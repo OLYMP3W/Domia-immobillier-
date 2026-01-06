@@ -38,14 +38,14 @@ export const useProperties = (filters?: {
 
       if (error) throw error;
       
-      // Fetch owner profiles separately
+      // Fetch owner public profiles (no email/phone exposed)
       const ownerIds = [...new Set(data?.map(p => p.owner_id) || [])];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
+      const { data: publicProfiles } = await supabase
+        .from('public_profiles')
+        .select('user_id, fullname, avatar_url')
         .in('user_id', ownerIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const profileMap = new Map(publicProfiles?.map(p => [p.user_id, { fullname: p.fullname, avatar_url: p.avatar_url }]) || []);
 
       return (data || []).map(property => ({
         ...property,
@@ -94,19 +94,30 @@ export const useProperty = (id: string) => {
 
       if (error) throw error;
       
-      // Fetch owner profile separately
-      const { data: ownerProfile } = await supabase
-        .from('profiles')
-        .select('*')
+      // Fetch owner public profile (no email/phone exposed to public)
+      const { data: ownerPublicProfile } = await supabase
+        .from('public_profiles')
+        .select('user_id, fullname, avatar_url')
         .eq('user_id', data.owner_id)
         .single();
+
+      // Fetch owner private profile for phone (only visible if RLS allows - authenticated users)
+      const { data: ownerPrivateProfile } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('user_id', data.owner_id)
+        .maybeSingle();
       
       // Increment views
       await supabase.rpc('increment_property_views', { property_id: id });
       
       return {
         ...data,
-        owner: ownerProfile,
+        owner: ownerPublicProfile ? {
+          fullname: ownerPublicProfile.fullname,
+          avatar_url: ownerPublicProfile.avatar_url,
+          phone: ownerPrivateProfile?.phone || null,
+        } : null,
       } as Property;
     },
     enabled: !!id,
