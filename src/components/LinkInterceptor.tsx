@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 const isModifiedEvent = (event: MouseEvent | TouchEvent) =>
   "metaKey" in event && (event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
@@ -14,11 +14,14 @@ const isAssetPath = (href: string) =>
  */
 export const LinkInterceptor = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const lastTouchHandledAtRef = useRef<number>(0);
 
   const handleNavigation = useCallback(
     (e: MouseEvent | TouchEvent) => {
       if (e.defaultPrevented) return;
+
+      // On mobile, a touch can fire touchend + a synthetic click; avoid double navigation.
+      if (e.type === "click" && Date.now() - lastTouchHandledAtRef.current < 800) return;
 
       // Only primary button for mouse
       if ("button" in e && e.button !== 0) return;
@@ -49,6 +52,7 @@ export const LinkInterceptor = () => {
           if (url.hash?.startsWith("#/")) {
             e.preventDefault();
             e.stopPropagation();
+            if (e.type === "touchend") lastTouchHandledAtRef.current = Date.now();
             navigate(url.hash.slice(1));
             return;
           }
@@ -57,6 +61,7 @@ export const LinkInterceptor = () => {
 
           e.preventDefault();
           e.stopPropagation();
+          if (e.type === "touchend") lastTouchHandledAtRef.current = Date.now();
           navigate(url.pathname + url.search + url.hash);
           return;
         } catch {
@@ -73,6 +78,7 @@ export const LinkInterceptor = () => {
 
       e.preventDefault();
       e.stopPropagation();
+      if (e.type === "touchend") lastTouchHandledAtRef.current = Date.now();
       navigate(href);
     },
     [navigate]
