@@ -39,6 +39,15 @@ export const LinkInterceptor = () => {
       if (!rawHref) return;
       if (rawHref === "#" || rawHref.startsWith("#")) return;
 
+      // Prevent "./" or "." from turning into /#/.
+      if (rawHref === "." || rawHref === "./") {
+        e.preventDefault();
+        // allow bubbling so component onClick still runs
+        if (e.type === "touchend") lastTouchHandledAtRef.current = Date.now();
+        navigate("/");
+        return;
+      }
+
       // Skip mailto/tel/sms links
       if (/^(mailto|tel|sms):/.test(rawHref)) return;
 
