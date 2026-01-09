@@ -156,24 +156,24 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                     </div>
 
                     <nav className="flex flex-col gap-1 flex-1">
-                      <Link
-                        to="/"
+                      <a
+                        href="/#/"
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Home className="h-5 w-5" />
                         Accueil
-                      </Link>
-                      <Link
-                        to={role === 'owner' ? '/dashboard/owner' : '/dashboard/tenant'}
+                      </a>
+                      <a
+                        href={`/#${role === 'owner' ? '/dashboard/owner' : '/dashboard/tenant'}`}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <User className="h-5 w-5" />
                         Tableau de bord
-                      </Link>
-                      <Link
-                        to="/messages"
+                      </a>
+                      <a
+                        href="/#/messages"
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
@@ -182,9 +182,9 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                         {unreadMessages > 0 && (
                           <Badge className="ml-auto">{unreadMessages}</Badge>
                         )}
-                      </Link>
-                      <Link
-                        to="/notifications"
+                      </a>
+                      <a
+                        href="/#/notifications"
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
@@ -193,23 +193,23 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                         {unreadNotifications > 0 && (
                           <Badge className="ml-auto">{unreadNotifications}</Badge>
                         )}
-                      </Link>
-                      <Link
-                        to="/settings"
+                      </a>
+                      <a
+                        href="/#/settings"
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Settings className="h-5 w-5" />
                         Paramètres
-                      </Link>
-                      <Link
-                        to="/install"
+                      </a>
+                      <a
+                        href="/#/install"
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Download className="h-5 w-5" />
                         Télécharger l'app
-                      </Link>
+                      </a>
                     </nav>
 
                     <Button
@@ -226,14 +226,14 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                   </>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    <Link
-                      to="/install"
+                    <a
+                      href="/#/install"
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Download className="h-5 w-5" />
                       Télécharger l'app
-                    </Link>
+                    </a>
                     <Button
                       variant="outline"
                       className="w-full"
