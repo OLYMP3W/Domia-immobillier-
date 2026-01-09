@@ -47,10 +47,14 @@ export const useProperties = (filters?: {
 
       const profileMap = new Map(publicProfiles?.map(p => [p.user_id, { fullname: p.fullname, avatar_url: p.avatar_url }]) || []);
 
-      return (data || []).map(property => ({
-        ...property,
-        owner: profileMap.get(property.owner_id) || null,
-      })) as Property[];
+      // Remove owner_id from public response to prevent exposure
+      return (data || []).map(property => {
+        const { owner_id, ...safeProperty } = property;
+        return {
+          ...safeProperty,
+          owner: profileMap.get(owner_id) || null,
+        };
+      }) as Property[];
     },
   });
 };
@@ -111,8 +115,11 @@ export const useProperty = (id: string) => {
       // Increment views
       await supabase.rpc('increment_property_views', { property_id: id });
       
+      // Remove owner_id from public response to prevent identity exposure
+      const { owner_id, ...safeData } = data;
+      
       return {
-        ...data,
+        ...safeData,
         owner: ownerPublicProfile ? {
           fullname: ownerPublicProfile.fullname,
           avatar_url: ownerPublicProfile.avatar_url,

@@ -41,13 +41,6 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "favorites_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       messages: {
@@ -84,13 +77,6 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -248,13 +234,6 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "property_images_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       public_profiles: {
@@ -337,66 +316,7 @@ export type Database = {
       }
     }
     Views: {
-      properties_public: {
-        Row: {
-          address: string | null
-          bathrooms: number | null
-          city: string | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          is_premium: boolean | null
-          is_published: boolean | null
-          neighborhood: string | null
-          owner_id: string | null
-          price: number | null
-          rooms: number | null
-          surface: number | null
-          title: string | null
-          type: string | null
-          updated_at: string | null
-          views: number | null
-        }
-        Insert: {
-          address?: string | null
-          bathrooms?: number | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_premium?: boolean | null
-          is_published?: boolean | null
-          neighborhood?: string | null
-          owner_id?: never
-          price?: number | null
-          rooms?: number | null
-          surface?: number | null
-          title?: string | null
-          type?: string | null
-          updated_at?: string | null
-          views?: number | null
-        }
-        Update: {
-          address?: string | null
-          bathrooms?: number | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_premium?: boolean | null
-          is_published?: boolean | null
-          neighborhood?: string | null
-          owner_id?: never
-          price?: number | null
-          rooms?: number | null
-          surface?: number | null
-          title?: string | null
-          type?: string | null
-          updated_at?: string | null
-          views?: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_user_role: {
