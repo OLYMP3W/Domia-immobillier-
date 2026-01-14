@@ -115,11 +115,9 @@ export const useProperty = (id: string) => {
       // Increment views
       await supabase.rpc('increment_property_views', { property_id: id });
       
-      // Remove owner_id from public response to prevent identity exposure
-      const { owner_id, ...safeData } = data;
-      
       return {
-        ...safeData,
+        ...data,
+        owner_id: data.owner_id, // Keep owner_id for messaging functionality
         owner: ownerPublicProfile ? {
           fullname: ownerPublicProfile.fullname,
           avatar_url: ownerPublicProfile.avatar_url,
