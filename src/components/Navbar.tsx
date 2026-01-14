@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Home, User, LogOut, Bell, MessageSquare, Settings, Menu, X, Download } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Home, User, LogOut, Bell, MessageSquare, Settings, Menu, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -26,8 +26,20 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
   const { data: unreadMessages = 0 } = useUnreadMessagesCount();
   const { data: unreadNotifications = 0 } = useUnreadNotificationsCount();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
   
   const totalUnread = unreadMessages + unreadNotifications;
+
+  const handleMobileNavigation = (path: string) => {
+    setMobileMenuOpen(false);
+    navigate(path);
+  };
+
+  const handleLogout = async () => {
+    setMobileMenuOpen(false);
+    await logout();
+    navigate('/');
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -111,7 +123,7 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-destructive">
+                <DropdownMenuItem onClick={() => logout()} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Déconnexion
                 </DropdownMenuItem>
@@ -156,69 +168,60 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                     </div>
 
                     <nav className="flex flex-col gap-1 flex-1">
-                      <a
-                        href="/#/"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                      <button
+                        onClick={() => handleMobileNavigation('/')}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
                         <Home className="h-5 w-5" />
                         Accueil
-                      </a>
-                      <a
-                        href={`/#${role === 'owner' ? '/dashboard/owner' : '/dashboard/tenant'}`}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                      </button>
+                      <button
+                        onClick={() => handleMobileNavigation(role === 'owner' ? '/dashboard/owner' : '/dashboard/tenant')}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
                         <User className="h-5 w-5" />
                         Tableau de bord
-                      </a>
-                      <a
-                        href="/#/messages"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                      </button>
+                      <button
+                        onClick={() => handleMobileNavigation('/messages')}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left w-full"
                       >
                         <MessageSquare className="h-5 w-5" />
                         Messages
                         {unreadMessages > 0 && (
                           <Badge className="ml-auto">{unreadMessages}</Badge>
                         )}
-                      </a>
-                      <a
-                        href="/#/notifications"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                      </button>
+                      <button
+                        onClick={() => handleMobileNavigation('/notifications')}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left w-full"
                       >
                         <Bell className="h-5 w-5" />
                         Notifications
                         {unreadNotifications > 0 && (
                           <Badge className="ml-auto">{unreadNotifications}</Badge>
                         )}
-                      </a>
-                      <a
-                        href="/#/settings"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                      </button>
+                      <button
+                        onClick={() => handleMobileNavigation('/settings')}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
                         <Settings className="h-5 w-5" />
                         Paramètres
-                      </a>
-                      <a
-                        href="/#/install"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                      </button>
+                      <button
+                        onClick={() => handleMobileNavigation('/install')}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                       >
                         <Download className="h-5 w-5" />
                         Télécharger l'app
-                      </a>
+                      </button>
                     </nav>
 
                     <Button
                       variant="destructive"
                       className="mt-auto"
-                      onClick={() => {
-                        logout();
-                        setMobileMenuOpen(false);
-                      }}
+                      onClick={handleLogout}
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       Déconnexion
@@ -226,14 +229,13 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                   </>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    <a
-                      href="/#/install"
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
+                    <button
+                      onClick={() => handleMobileNavigation('/install')}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
                     >
                       <Download className="h-5 w-5" />
                       Télécharger l'app
-                    </a>
+                    </button>
                     <Button
                       variant="outline"
                       className="w-full"

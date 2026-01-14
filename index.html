@@ -1,18 +1,96 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#1f2d5a" />
+    
+    <!-- Primary Meta Tags -->
     <title>Domia - Trouvez votre maison idéale au Gabon</title>
-    <meta name="description" content="Plateforme de location et vente immobilière au Gabon. Trouvez votre maison idéale avec des annonces vérifiées par des propriétaires de confiance." />
+    <meta name="title" content="Domia - Trouvez votre maison idéale au Gabon" />
+    <meta name="description" content="Plateforme de location et vente immobilière au Gabon. Découvrez des annonces vérifiées par des propriétaires de confiance à Libreville, Port-Gentil, Franceville." />
     <meta name="author" content="Domia" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <meta name="keywords" content="immobilier Gabon, location Libreville, appartement Port-Gentil, maison Gabon, villa Libreville, location appartement Gabon" />
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.png" />
-<meta property="og:url" content="https://domia-chi.vercel.app" />
-    <meta property="og:title" content="Domia - Votre maison idéale au Gabon" />
-    <meta property="og:description" content="Plateforme de location et vente immobilière au Gabon" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+    
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://domia-chi.vercel.app/assets/favicon.png" /> <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://domia.ga/" />
+    <meta property="og:title" content="Domia - Trouvez votre maison idéale au Gabon" />
+    <meta property="og:description" content="Plateforme de location et vente immobilière au Gabon. Découvrez des annonces vérifiées par des propriétaires de confiance." />
+    <meta property="og:image" content="https://domia.ga/og-image.png" />
+    <meta property="og:locale" content="fr_GA" />
+    <meta property="og:site_name" content="Domia" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://domia.ga/" />
+    <meta name="twitter:title" content="Domia - Trouvez votre maison idéale au Gabon" />
+    <meta name="twitter:description" content="Plateforme de location et vente immobilière au Gabon. Découvrez des annonces vérifiées par des propriétaires de confiance." />
+    <meta name="twitter:image" content="https://domia.ga/og-image.png" />
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Domia" />
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="https://domia.ga/" />
+    
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "RealEstateAgent",
+      "name": "Domia",
+      "description": "Plateforme de location et vente immobilière au Gabon",
+      "url": "https://domia.ga",
+      "logo": "https://domia.ga/favicon.png",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Libreville",
+        "addressCountry": "GA"
+      },
+      "telephone": "+241076467692",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Gabon"
+      }
+    }
+    </script>
+    
+    <!-- Initial Loading Style -->
+    <style>
+      #root:empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      }
+      #root:empty::after {
+        content: "";
+        width: 40px;
+        height: 40px;
+        border: 3px solid #d4a537;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
 
   <body>
