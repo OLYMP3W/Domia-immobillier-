@@ -1,113 +1,137 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ConversationList } from '@/components/chat/ConversationList';
+import { ChatWindow } from '@/components/chat/ChatWindow';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, MessageSquare, Home } from 'lucide-react';
-import { useMessages, useMarkMessageAsRead } from '@/hooks/useMessages';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { useConversations, useConversationMessages, useCreateConversation } from '@/hooks/useConversations';
+import { Conversation } from '@/types/database';
+import { Loader2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Messages = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const { data: messages = [], isLoading: messagesLoading } = useMessages();
-  const markAsRead = useMarkMessageAsRead();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
+  
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [showChat, setShowChat] = useState(false);
 
-  if (isLoading) {
+  const { data: conversations = [], isLoading: conversationsLoading } = useConversations();
+  const { data: messages = [], isLoading: messagesLoading } = useConversationMessages(
+    selectedConversation?.id || null
+  );
+  const createConversation = useCreateConversation();
+
+  // Handle deep link to start conversation with someone
+  useEffect(() => {
+    const userId = searchParams.get('user');
+    const propertyId = searchParams.get('property');
+    
+    if (userId && user) {
+      // Check if conversation already exists
+      const existing = conversations.find(c => 
+        (c.participant_1 === userId || c.participant_2 === userId) &&
+        (propertyId ? c.property_id === propertyId : true)
+      );
+      
+      if (existing) {
+        setSelectedConversation(existing);
+        setShowChat(true);
+      } else if (!createConversation.isPending) {
+        createConversation.mutateAsync({ 
+          otherUserId: userId, 
+          propertyId: propertyId || undefined 
+        }).then(() => {
+          // Conversation will appear after refresh
+        });
+      }
+    }
+  }, [searchParams, user, conversations]);
+
+  const handleSelectConversation = (conversation: Conversation) => {
+    setSelectedConversation(conversation);
+    setShowChat(true);
+  };
+
+  const handleBack = () => {
+    setShowChat(false);
+    setSelectedConversation(null);
+  };
+
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    navigate('/');
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <div className="container py-8 max-w-2xl">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/">
-              <Home className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Messages</h1>
-            <p className="text-muted-foreground">Vos conversations</p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-gold" />
-              Boîte de réception
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {messagesLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="text-center py-12">
-                <MessageSquare className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Aucun message</h3>
-                <p className="text-muted-foreground">
-                  Vos conversations apparaîtront ici
-                </p>
-              </div>
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="bg-card rounded-lg shadow-sm border overflow-hidden h-[calc(100vh-200px)] min-h-[500px]">
+          {isMobile ? (
+            // Mobile: Show either list or chat
+            showChat && selectedConversation ? (
+              <ChatWindow
+                conversation={selectedConversation}
+                messages={messages}
+                isLoading={messagesLoading}
+                onBack={handleBack}
+                showBackButton
+              />
             ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${
-                      !message.is_read ? 'bg-gold/5 border-gold/20' : ''
-                    }`}
-                    onClick={() => {
-                      if (!message.is_read) {
-                        markAsRead.mutate(message.id);
-                      }
-                    }}
-                  >
-                    <Avatar>
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold truncate">Utilisateur</p>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {formatDistanceToNow(new Date(message.created_at), { 
-                            addSuffix: true, 
-                            locale: fr 
-                          })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {message.content}
-                      </p>
-                      {!message.is_read && (
-                        <span className="inline-block mt-2 text-xs bg-gold text-white px-2 py-0.5 rounded">
-                          Non lu
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="h-full flex flex-col">
+                <div className="p-4 border-b">
+                  <h1 className="text-xl font-semibold">Messages</h1>
+                </div>
+                <ConversationList
+                  conversations={conversations}
+                  selectedId={selectedConversation?.id || null}
+                  onSelect={handleSelectConversation}
+                  isLoading={conversationsLoading}
+                />
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
+            )
+          ) : (
+            // Desktop: Side by side
+            <div className="flex h-full">
+              <div className="w-80 border-r flex flex-col">
+                <div className="p-4 border-b">
+                  <h1 className="text-xl font-semibold">Messages</h1>
+                </div>
+                <div className="flex-1">
+                  <ConversationList
+                    conversations={conversations}
+                    selectedId={selectedConversation?.id || null}
+                    onSelect={handleSelectConversation}
+                    isLoading={conversationsLoading}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex-1">
+                <ChatWindow
+                  conversation={selectedConversation}
+                  messages={messages}
+                  isLoading={messagesLoading}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+      
       <Footer />
     </div>
   );

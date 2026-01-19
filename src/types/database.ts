@@ -9,6 +9,14 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface PublicProfile {
+  user_id: string;
+  fullname: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserRole {
   id: string;
   user_id: string;
@@ -35,7 +43,9 @@ export interface Property {
   updated_at: string;
   // Joined data
   owner?: Profile;
+  public_owner?: PublicProfile;
   images?: PropertyImage[];
+  media?: PropertyMedia[];
 }
 
 export interface PropertyImage {
@@ -44,6 +54,29 @@ export interface PropertyImage {
   url: string;
   is_primary: boolean;
   created_at: string;
+}
+
+export interface PropertyMedia {
+  id: string;
+  property_id: string;
+  url: string;
+  type: 'image' | 'video';
+  is_primary: boolean;
+  created_at: string;
+}
+
+export interface Conversation {
+  id: string;
+  participant_1: string;
+  participant_2: string;
+  property_id: string | null;
+  last_message_at: string;
+  created_at: string;
+  // Joined data
+  other_participant?: PublicProfile;
+  property?: Property;
+  last_message?: Message;
+  unread_count?: number;
 }
 
 export interface Favorite {
@@ -59,11 +92,12 @@ export interface Message {
   sender_id: string;
   receiver_id: string;
   property_id: string | null;
+  conversation_id: string | null;
   content: string;
   is_read: boolean;
   created_at: string;
-  sender?: Profile;
-  receiver?: Profile;
+  sender?: PublicProfile;
+  receiver?: PublicProfile;
   property?: Property;
 }
 
@@ -86,5 +120,42 @@ export interface Notification {
   message: string;
   type: string;
   is_read: boolean;
+  created_at: string;
+}
+
+export interface AppInstall {
+  id: string;
+  user_id: string | null;
+  device_info: string | null;
+  installed_at: string;
+}
+
+export interface ReportedProperty {
+  id: string;
+  property_id: string;
+  reporter_id: string;
+  reason: string;
+  status: 'pending' | 'reviewed' | 'removed' | 'dismissed';
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  property?: Property;
+}
+
+export interface SiteStats {
+  id: string;
+  stat_date: string;
+  total_users: number;
+  total_owners: number;
+  total_tenants: number;
+  total_properties: number;
+  total_installs: number;
+  page_views: number;
+  created_at: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
   created_at: string;
 }

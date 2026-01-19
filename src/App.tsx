@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PWAInstallBanner } from "./hooks/usePWAInstall";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -15,12 +16,14 @@ import Settings from "./pages/Settings";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Install from "./pages/Install";
+import PublicProfile from "./pages/PublicProfile";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
       retry: 2,
       refetchOnWindowFocus: false,
     },
@@ -46,8 +49,11 @@ const App = () => (
               <Route path="/messages" element={<Messages />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/install" element={<Install />} />
+              <Route path="/profile/:userId" element={<PublicProfile />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <PWAInstallBanner />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
