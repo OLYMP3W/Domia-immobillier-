@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      app_installs: {
+        Row: {
+          device_info: string | null
+          id: string
+          installed_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          device_info?: string | null
+          id?: string
+          installed_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          device_info?: string | null
+          id?: string
+          installed_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          participant_1: string
+          participant_2: string
+          property_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_1: string
+          participant_2: string
+          property_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_1?: string
+          participant_2?: string
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -46,6 +120,7 @@ export type Database = {
       messages: {
         Row: {
           content: string
+          conversation_id: string | null
           created_at: string
           id: string
           is_read: boolean | null
@@ -55,6 +130,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean | null
@@ -64,6 +140,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean | null
@@ -72,6 +149,13 @@ export type Database = {
           sender_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_property_id_fkey"
             columns: ["property_id"]
@@ -236,6 +320,41 @@ export type Database = {
           },
         ]
       }
+      property_media: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          property_id: string
+          type: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          property_id: string
+          type?: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          property_id?: string
+          type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_media_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -259,6 +378,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reported_properties: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          id: string
+          property_id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          status: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          id?: string
+          property_id: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          id?: string
+          property_id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reported_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_searches: {
         Row: {
@@ -296,6 +456,42 @@ export type Database = {
         }
         Relationships: []
       }
+      site_stats: {
+        Row: {
+          created_at: string | null
+          id: string
+          page_views: number | null
+          stat_date: string
+          total_installs: number | null
+          total_owners: number | null
+          total_properties: number | null
+          total_tenants: number | null
+          total_users: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          page_views?: number | null
+          stat_date?: string
+          total_installs?: number | null
+          total_owners?: number | null
+          total_properties?: number | null
+          total_tenants?: number | null
+          total_users?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          page_views?: number | null
+          stat_date?: string
+          total_installs?: number | null
+          total_owners?: number | null
+          total_properties?: number | null
+          total_tenants?: number | null
+          total_users?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -319,6 +515,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_or_create_conversation: {
+        Args: { p_property_id?: string; p_user_1: string; p_user_2: string }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -327,6 +527,7 @@ export type Database = {
         Args: { property_id: string }
         Returns: undefined
       }
+      is_admin_by_email: { Args: { _email: string }; Returns: boolean }
     }
     Enums: {
       app_role: "owner" | "tenant"

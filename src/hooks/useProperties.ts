@@ -117,11 +117,16 @@ export const useProperty = (id: string) => {
       
       return {
         ...data,
-        owner_id: data.owner_id, // Keep owner_id for messaging functionality
+        owner_id: data.owner_id,
         owner: ownerPublicProfile ? {
+          id: '',
+          user_id: ownerPublicProfile.user_id,
           fullname: ownerPublicProfile.fullname,
+          email: '',
           avatar_url: ownerPublicProfile.avatar_url,
           phone: ownerPrivateProfile?.phone || null,
+          created_at: '',
+          updated_at: '',
         } : null,
       } as Property;
     },
