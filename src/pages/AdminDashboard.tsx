@@ -4,12 +4,9 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,16 +17,12 @@ import {
   Home,
   Eye,
   Download,
-  TrendingUp,
   Shield,
-  AlertTriangle,
   Trash2,
   CheckCircle,
   XCircle,
   Loader2,
-  BarChart3,
-  Mail,
-  Lock,
+  RefreshCw,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -95,9 +88,6 @@ const AdminDashboard = () => {
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<UserData[]>([]);
@@ -118,6 +108,8 @@ const AdminDashboard = () => {
       if (data.user?.email === 'infodomia7@gmail.com') {
         setIsAdmin(true);
         loadAdminData();
+      } else {
+        navigate('/');
       }
       setIsVerifying(false);
     };
@@ -125,138 +117,33 @@ const AdminDashboard = () => {
     if (!authLoading) {
       checkAdmin();
     }
-  }, [user, authLoading]);
-
-  const handleAdminLogin = async () => {
-    if (adminEmail !== 'infodomia7@gmail.com') {
-      toast({
-        title: 'Accès refusé',
-        description: 'Vous n\'êtes pas autorisé à accéder à cette section',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setLoginLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: adminEmail,
-        password: adminPassword,
-      });
-
-      if (error) throw error;
-      
-      setIsAdmin(true);
-      loadAdminData();
-      toast({
-        title: 'Connexion réussie',
-        description: 'Bienvenue dans le tableau de bord admin',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erreur de connexion',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoginLoading(false);
-    }
-  };
+  }, [user, authLoading, navigate]);
 
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      // Get stats
-      const [usersRes, propertiesRes, installsRes] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('properties').select('views', { count: 'exact' }),
-        supabase.from('app_installs').select('*', { count: 'exact', head: true }),
-      ]);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
 
-      const { data: rolesData } = await supabase
-        .from('user_roles')
-        .select('role');
-
-      const totalViews = propertiesRes.data?.reduce((acc, p) => acc + (p.views || 0), 0) || 0;
-      const owners = rolesData?.filter(r => r.role === 'owner').length || 0;
-      const tenants = rolesData?.filter(r => r.role === 'tenant').length || 0;
-
-      setStats({
-        totalUsers: usersRes.count || 0,
-        totalOwners: owners,
-        totalTenants: tenants,
-        totalProperties: propertiesRes.count || 0,
-        totalInstalls: installsRes.count || 0,
-        totalViews,
+      const response = await supabase.functions.invoke('admin-data', {
+        body: { action: 'get-stats' },
       });
 
-      // Get users with roles
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, fullname, email, created_at')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      if (response.error) throw response.error;
 
-      if (profilesData) {
-        const { data: rolesMap } = await supabase
-          .from('user_roles')
-          .select('user_id, role');
+      const data = response.data;
+      setStats(data.stats);
+      setUsers(data.users);
+      setProperties(data.properties);
+      setReports(data.reports);
 
-        const roleMap = new Map(rolesMap?.map(r => [r.user_id, r.role]) || []);
-
-        setUsers(profilesData.map(p => ({
-          ...p,
-          role: roleMap.get(p.user_id) || 'unknown',
-        })));
-      }
-
-      // Get properties with owners
-      const { data: propertiesData } = await supabase
-        .from('properties')
-        .select('id, title, city, owner_id, views, is_published, created_at')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (propertiesData) {
-        const ownerIds = [...new Set(propertiesData.map(p => p.owner_id))];
-        const { data: ownersData } = await supabase
-          .from('profiles')
-          .select('user_id, fullname, email')
-          .in('user_id', ownerIds);
-
-        const ownerMap = new Map(ownersData?.map(o => [o.user_id, o]) || []);
-
-        setProperties(propertiesData.map(p => ({
-          ...p,
-          owner_name: ownerMap.get(p.owner_id)?.fullname || 'Inconnu',
-          owner_email: ownerMap.get(p.owner_id)?.email || '',
-        })));
-      }
-
-      // Get reports
-      const { data: reportsData } = await supabase
-        .from('reported_properties')
-        .select('id, property_id, reason, status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (reportsData) {
-        const propertyIds = reportsData.map(r => r.property_id);
-        const { data: reportedProperties } = await supabase
-          .from('properties')
-          .select('id, title')
-          .in('id', propertyIds);
-
-        const propMap = new Map(reportedProperties?.map(p => [p.id, p.title]) || []);
-
-        setReports(reportsData.map(r => ({
-          ...r,
-          property_title: propMap.get(r.property_id) || 'Supprimée',
-        })));
-      }
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading admin data:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les données admin',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -264,17 +151,16 @@ const AdminDashboard = () => {
 
   const handleDeleteProperty = async (propertyId: string) => {
     try {
-      const { error } = await supabase
-        .from('properties')
-        .delete()
-        .eq('id', propertyId);
+      const response = await supabase.functions.invoke('admin-data', {
+        body: { action: 'delete-property', propertyId },
+      });
 
-      if (error) throw error;
+      if (response.error) throw response.error;
 
       setProperties(prev => prev.filter(p => p.id !== propertyId));
       toast({
         title: 'Annonce supprimée',
-        description: 'L\'annonce a été supprimée avec succès',
+        description: "L'annonce a été supprimée avec succès",
       });
     } catch (error: any) {
       toast({
@@ -287,20 +173,17 @@ const AdminDashboard = () => {
 
   const handleUpdateReportStatus = async (reportId: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('reported_properties')
-        .update({ status, reviewed_at: new Date().toISOString() })
-        .eq('id', reportId);
+      const response = await supabase.functions.invoke('admin-data', {
+        body: { action: 'update-report', reportId, status },
+      });
 
-      if (error) throw error;
+      if (response.error) throw response.error;
 
       setReports(prev => prev.map(r => 
         r.id === reportId ? { ...r, status } : r
       ));
 
-      toast({
-        title: 'Signalement mis à jour',
-      });
+      toast({ title: 'Signalement mis à jour' });
     } catch (error: any) {
       toast({
         title: 'Erreur',
@@ -318,72 +201,10 @@ const AdminDashboard = () => {
     );
   }
 
-  // Admin login form
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 w-fit">
-                <Shield className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle>Administration Domia</CardTitle>
-              <CardDescription>
-                Connectez-vous avec vos identifiants administrateur
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email administrateur</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={adminEmail}
-                    onChange={(e) => setAdminEmail(e.target.value)}
-                    className="pl-10"
-                    placeholder="admin@domia.com"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="pl-10"
-                    placeholder="••••••••"
-                  />
-                </div>
-              </div>
-              <Button 
-                className="w-full" 
-                onClick={handleAdminLogin}
-                disabled={loginLoading}
-              >
-                {loginLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Shield className="h-4 w-4 mr-2" />
-                )}
-                Accéder au tableau de bord
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
+    return null;
   }
 
-  // Admin dashboard
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -400,7 +221,8 @@ const AdminDashboard = () => {
             </p>
           </div>
           <Button variant="outline" onClick={loadAdminData} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Actualiser'}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            {!loading && 'Actualiser'}
           </Button>
         </div>
 
@@ -476,207 +298,212 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Tabs */}
-        <Tabs defaultValue="users">
-          <TabsList className="mb-4">
-            <TabsTrigger value="users">Utilisateurs</TabsTrigger>
-            <TabsTrigger value="properties">Annonces</TabsTrigger>
-            <TabsTrigger value="reports">Signalements</TabsTrigger>
-          </TabsList>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <Tabs defaultValue="users">
+            <TabsList className="mb-4">
+              <TabsTrigger value="users">Utilisateurs ({users.length})</TabsTrigger>
+              <TabsTrigger value="properties">Annonces ({properties.length})</TabsTrigger>
+              <TabsTrigger value="reports">Signalements ({reports.length})</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>Utilisateurs inscrits</CardTitle>
-                <CardDescription>
-                  Liste de tous les utilisateurs avec leurs emails et rôles
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nom</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Rôle</TableHead>
-                        <TableHead>Inscrit le</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow key={user.user_id}>
-                          <TableCell className="font-medium">{user.fullname}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>
-                              {user.role === 'owner' ? 'Propriétaire' : 'Locataire'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: fr })}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="properties">
-            <Card>
-              <CardHeader>
-                <CardTitle>Toutes les annonces</CardTitle>
-                <CardDescription>
-                  Gérez les annonces publiées sur la plateforme
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Titre</TableHead>
-                        <TableHead>Ville</TableHead>
-                        <TableHead>Propriétaire</TableHead>
-                        <TableHead>Vues</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {properties.map((property) => (
-                        <TableRow key={property.id}>
-                          <TableCell className="font-medium max-w-[200px] truncate">
-                            {property.title}
-                          </TableCell>
-                          <TableCell>{property.city}</TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{property.owner_name}</p>
-                              <p className="text-xs text-muted-foreground">{property.owner_email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{property.views}</TableCell>
-                          <TableCell>
-                            <Badge variant={property.is_published ? 'default' : 'secondary'}>
-                              {property.is_published ? 'Publié' : 'Brouillon'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Supprimer cette annonce ?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Cette action est irréversible. L'annonce sera définitivement supprimée.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteProperty(property.id)}
-                                    className="bg-destructive text-destructive-foreground"
-                                  >
-                                    Supprimer
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="reports">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                  Signalements
-                </CardTitle>
-                <CardDescription>
-                  Annonces signalées par les utilisateurs
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {reports.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-4" />
-                    <p>Aucun signalement en attente</p>
-                  </div>
-                ) : (
+            <TabsContent value="users">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Utilisateurs inscrits</CardTitle>
+                  <CardDescription>
+                    Liste de tous les utilisateurs avec leurs emails et rôles
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <ScrollArea className="h-[500px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Annonce</TableHead>
-                          <TableHead>Raison</TableHead>
-                          <TableHead>Statut</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead>Nom</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Rôle</TableHead>
+                          <TableHead>Inscription</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {reports.map((report) => (
-                          <TableRow key={report.id}>
-                            <TableCell className="font-medium">{report.property_title}</TableCell>
-                            <TableCell className="max-w-[200px] truncate">{report.reason}</TableCell>
+                        {users.map((user) => (
+                          <TableRow key={user.user_id}>
+                            <TableCell className="font-medium">{user.fullname}</TableCell>
+                            <TableCell>{user.email}</TableCell>
                             <TableCell>
-                              <Badge 
-                                variant={
-                                  report.status === 'pending' ? 'outline' :
-                                  report.status === 'removed' ? 'destructive' :
-                                  'secondary'
-                                }
-                              >
-                                {report.status === 'pending' ? 'En attente' :
-                                 report.status === 'reviewed' ? 'Examiné' :
-                                 report.status === 'removed' ? 'Supprimé' :
-                                 'Rejeté'}
+                              <Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>
+                                {user.role === 'owner' ? 'Propriétaire' : 'Locataire'}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {format(new Date(report.created_at), 'dd/MM/yyyy', { locale: fr })}
-                            </TableCell>
-                            <TableCell className="space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleUpdateReportStatus(report.id, 'dismissed')}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleUpdateReportStatus(report.id, 'removed')}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: fr })}
                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="properties">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Toutes les annonces</CardTitle>
+                  <CardDescription>
+                    Gérez les annonces de la plateforme
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[500px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Titre</TableHead>
+                          <TableHead>Ville</TableHead>
+                          <TableHead>Propriétaire</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Vues</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {properties.map((property) => (
+                          <TableRow key={property.id}>
+                            <TableCell className="font-medium max-w-[200px] truncate">
+                              {property.title}
+                            </TableCell>
+                            <TableCell>{property.city}</TableCell>
+                            <TableCell>{property.owner_name}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {property.owner_email}
+                            </TableCell>
+                            <TableCell>{property.views}</TableCell>
+                            <TableCell>
+                              <Badge variant={property.is_published ? 'default' : 'secondary'}>
+                                {property.is_published ? 'Publiée' : 'Brouillon'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Supprimer cette annonce ?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Cette action est irréversible. L'annonce "{property.title}" sera définitivement supprimée.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteProperty(property.id)}
+                                      className="bg-destructive text-destructive-foreground"
+                                    >
+                                      Supprimer
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Signalements</CardTitle>
+                  <CardDescription>
+                    Gérez les annonces signalées par les utilisateurs
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {reports.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      Aucun signalement
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[500px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Annonce</TableHead>
+                            <TableHead>Raison</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reports.map((report) => (
+                            <TableRow key={report.id}>
+                              <TableCell className="font-medium">
+                                {report.property_title}
+                              </TableCell>
+                              <TableCell className="max-w-[200px] truncate">
+                                {report.reason}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    report.status === 'pending' ? 'secondary' :
+                                    report.status === 'reviewed' ? 'default' :
+                                    report.status === 'removed' ? 'destructive' : 'outline'
+                                  }
+                                >
+                                  {report.status === 'pending' ? 'En attente' :
+                                   report.status === 'reviewed' ? 'Examiné' :
+                                   report.status === 'removed' ? 'Supprimé' : 'Rejeté'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {format(new Date(report.created_at), 'dd/MM/yyyy', { locale: fr })}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleUpdateReportStatus(report.id, 'reviewed')}
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleUpdateReportStatus(report.id, 'dismissed')}
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </main>
       
       <Footer />

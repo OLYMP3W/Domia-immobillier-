@@ -74,26 +74,41 @@ const CreateProperty = () => {
     if (totalImages > MAX_IMAGES) {
       toast({
         title: 'Limite atteinte',
-        description: `Vous pouvez ajouter maximum ${MAX_IMAGES} images`,
+        description: `Vous pouvez ajouter maximum ${MAX_IMAGES} fichiers`,
         variant: 'destructive',
       });
       return;
     }
 
+    // Validate file sizes
+    const validFiles = newFiles.filter(file => {
+      const isVideo = file.type.startsWith('video/');
+      const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast({
+          title: 'Fichier trop volumineux',
+          description: `${file.name} dépasse la limite de ${isVideo ? '100MB' : '10MB'}`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      return true;
+    });
+
     // Generate previews
     const newPreviews: string[] = [];
-    newFiles.forEach((file) => {
+    validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         newPreviews.push(reader.result as string);
-        if (newPreviews.length === newFiles.length) {
+        if (newPreviews.length === validFiles.length) {
           setImagePreviews(prev => [...prev, ...newPreviews]);
         }
       };
       reader.readAsDataURL(file);
     });
 
-    setImages(prev => [...prev, ...newFiles]);
+    setImages(prev => [...prev, ...validFiles]);
   };
 
   const removeImage = (index: number) => {
@@ -103,15 +118,16 @@ const CreateProperty = () => {
 
   const uploadImage = async (file: File, propertyId: string): Promise<string | null> => {
     try {
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const isVideo = file.type.startsWith('video/');
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || (isVideo ? 'mp4' : 'jpg');
       const fileName = `${user?.id}/${propertyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
-      // Compress image before upload for better performance
-      const compressedFile = await compressImage(file);
+      // Only compress images, not videos
+      const fileToUpload = isVideo ? file : await compressImage(file);
       
       const { error: uploadError } = await supabase.storage
         .from('property-images')
-        .upload(fileName, compressedFile, {
+        .upload(fileName, fileToUpload, {
           cacheControl: '3600',
           upsert: false
         });
@@ -127,7 +143,7 @@ const CreateProperty = () => {
 
       return data.publicUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('Error uploading file:', error);
       return null;
     }
   };
@@ -415,15 +431,15 @@ const CreateProperty = () => {
                 </div>
               </div>
 
-              {/* Images */}
+              {/* Images & Videos */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Photos ({images.length}/{MAX_IMAGES})</h3>
+                <h3 className="text-lg font-semibold">Photos & Vidéos ({images.length}/{MAX_IMAGES})</h3>
                 
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <input
                     type="file"
                     id="images"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     multiple
                     onChange={handleImageChange}
                     className="hidden"
@@ -434,10 +450,10 @@ const CreateProperty = () => {
                   >
                     <Upload className="h-10 w-10 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Cliquez pour ajouter des photos depuis votre galerie
+                      Cliquez pour ajouter des photos ou vidéos
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Maximum {MAX_IMAGES} images
+                      Images (max 10MB) • Vidéos (max 100MB) • Maximum {MAX_IMAGES} fichiers
                     </span>
                   </label>
                 </div>
@@ -446,14 +462,27 @@ const CreateProperty = () => {
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
+                        {images[index]?.type.startsWith('video/') ? (
+                          <video
+                            src={preview}
+                            className="h-full w-full object-cover"
+                            muted
+                          />
+                        ) : (
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        )}
                         {index === 0 && (
                           <span className="absolute top-1 left-1 bg-gold text-white text-xs px-2 py-0.5 rounded">
                             Principal
+                          </span>
+                        )}
+                        {images[index]?.type.startsWith('video/') && (
+                          <span className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
+                            Vidéo
                           </span>
                         )}
                         <button

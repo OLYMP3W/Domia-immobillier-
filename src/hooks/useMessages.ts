@@ -110,11 +110,22 @@ export const useSendMessage = () => {
     }) => {
       if (!user) throw new Error('Not authenticated');
 
+      // Get or create conversation first
+      const { data: conversationId, error: convError } = await supabase
+        .rpc('get_or_create_conversation', {
+          p_user_1: user.id,
+          p_user_2: receiverId,
+          p_property_id: propertyId || null,
+        });
+
+      if (convError) throw convError;
+
       const { data, error } = await supabase
         .from('messages')
         .insert({
           sender_id: user.id,
           receiver_id: receiverId,
+          conversation_id: conversationId,
           property_id: propertyId || null,
           content,
         })
@@ -122,10 +133,18 @@ export const useSendMessage = () => {
         .single();
 
       if (error) throw error;
+
+      // Update conversation's last_message_at
+      await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
   });
 };

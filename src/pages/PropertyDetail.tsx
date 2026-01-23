@@ -144,6 +144,23 @@ const PropertyDetail = () => {
 
   const images = property.images?.map(img => img.url) || [];
 
+  // Format relative date for publication
+  const formatRelativeDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "À l'instant";
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays === 0) return `Aujourd'hui`;
+    if (diffDays === 1) return `Hier`;
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -160,22 +177,33 @@ const PropertyDetail = () => {
 
         <div className="grid gap-6 lg:gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            {/* Image Gallery */}
+            {/* Image/Video Gallery */}
             {images.length > 0 ? (
               <Carousel className="w-full">
                 <CarouselContent>
-                  {images.map((image, index) => (
-                    <CarouselItem key={index}>
-                      <div className="relative aspect-video overflow-hidden rounded-xl">
-                        <img
-                          src={image}
-                          alt={`${property.title} - ${index + 1}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    </CarouselItem>
-                  ))}
+                  {images.map((url, index) => {
+                    const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i);
+                    return (
+                      <CarouselItem key={index}>
+                        <div className="relative aspect-video overflow-hidden rounded-xl">
+                          {isVideo ? (
+                            <video
+                              src={url}
+                              controls
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <img
+                              src={url}
+                              alt={`${property.title} - ${index + 1}`}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
                 </CarouselContent>
                 {images.length > 1 && (
                   <>
@@ -272,7 +300,10 @@ const PropertyDetail = () => {
               <CardContent className="p-4 sm:p-6">
                 <h3 className="text-lg font-bold mb-4">Propriétaire</h3>
                 
-                <div className="flex items-center gap-3 mb-6">
+                <Link 
+                  to={`/profile/${property.owner_id}`}
+                  className="flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity"
+                >
                   <Avatar className="h-14 w-14 sm:h-16 sm:w-16">
                     <AvatarImage src={property.owner?.avatar_url || ''} />
                     <AvatarFallback className="bg-gold text-white">
@@ -281,9 +312,9 @@ const PropertyDetail = () => {
                   </Avatar>
                   <div>
                     <div className="font-semibold">{property.owner?.fullname || 'Propriétaire'}</div>
-                    <div className="text-sm text-muted-foreground">Membre Domia</div>
+                    <div className="text-sm text-muted-foreground">Voir le profil</div>
                   </div>
-                </div>
+                </Link>
 
                 <Separator className="my-4" />
 
@@ -308,6 +339,10 @@ const PropertyDetail = () => {
                   <div className="flex items-center justify-between">
                     <span>Vues</span>
                     <span className="font-semibold text-foreground">{property.views || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Publication</span>
+                    <span className="font-semibold text-gold">{formatRelativeDate(property.created_at)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Publié le</span>
