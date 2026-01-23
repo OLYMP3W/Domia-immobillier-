@@ -47,14 +47,11 @@ export const useProperties = (filters?: {
 
       const profileMap = new Map(publicProfiles?.map(p => [p.user_id, { fullname: p.fullname, avatar_url: p.avatar_url }]) || []);
 
-      // Remove owner_id from public response to prevent exposure
-      return (data || []).map(property => {
-        const { owner_id, ...safeProperty } = property;
-        return {
-          ...safeProperty,
-          owner: profileMap.get(owner_id) || null,
-        };
-      }) as Property[];
+      // Keep owner_id for profile links but don't expose sensitive data
+      return (data || []).map(property => ({
+        ...property,
+        owner: profileMap.get(property.owner_id) || null,
+      })) as Property[];
     },
   });
 };

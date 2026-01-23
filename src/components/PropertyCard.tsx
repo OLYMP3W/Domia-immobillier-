@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Home as HomeIcon } from 'lucide-react';
+import { Heart, MapPin, Home as HomeIcon, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Property } from '@/types/database';
 import { useToggleFavorite, useIsFavorite } from '@/hooks/useFavorites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { formatPropertyDate } from '@/lib/dateUtils';
 
 interface PropertyCardProps {
   property: Property;
@@ -112,16 +113,25 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={property.owner?.avatar_url || ''} />
-            <AvatarFallback>{property.owner?.fullname?.charAt(0) || 'P'}</AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium">{property.owner?.fullname || 'Propriétaire'}</span>
+      <CardFooter className="p-4 pt-0 flex flex-col gap-3">
+        <div className="flex items-center justify-between w-full">
+          <Link 
+            to={`/profile/${property.owner_id}`}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={property.owner?.avatar_url || ''} />
+              <AvatarFallback>{property.owner?.fullname?.charAt(0) || 'P'}</AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium">{property.owner?.fullname || 'Propriétaire'}</span>
+          </Link>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>{formatPropertyDate(property.created_at)}</span>
+          </div>
         </div>
 
-        <Button asChild size="sm" className="gradient-gold">
+        <Button asChild size="sm" className="gradient-gold w-full">
           <Link to={`/property/${property.id}`}>
             Voir détails
           </Link>
