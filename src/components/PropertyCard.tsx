@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Home as HomeIcon, Clock } from 'lucide-react';
+import { Heart, MapPin, Home as HomeIcon, Clock, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -13,6 +13,12 @@ import { formatPropertyDate } from '@/lib/dateUtils';
 interface PropertyCardProps {
   property: Property;
 }
+
+// Détermine si un fichier est une vidéo
+const isVideoUrl = (url: string): boolean => {
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
+  return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+};
 
 export const PropertyCard = ({ property }: PropertyCardProps) => {
   const { isAuthenticated } = useAuth();
@@ -45,8 +51,16 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
     }
   };
 
-  const primaryImage = property.images?.find(img => img.is_primary)?.url || 
-                       property.images?.[0]?.url;
+  // Get all media (images + check for videos)
+  const allMedia = property.images?.map(img => ({
+    url: img.url,
+    is_primary: img.is_primary,
+    isVideo: isVideoUrl(img.url),
+  })) || [];
+  
+  const primaryMedia = allMedia.find(m => m.is_primary) || allMedia[0];
+  const mediaCount = allMedia.length;
+  const hasVideo = allMedia.some(m => m.isVideo);
 
   const formatPrice = (price: number, type: string) => {
     const formatted = price.toLocaleString('fr-FR');
@@ -55,34 +69,111 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
 
   return (
     <Card className="group overflow-hidden hover-lift animate-fade-in">
-      <div className="relative aspect-video overflow-hidden bg-muted">
-        {primaryImage ? (
-          <img
-            src={primaryImage}
-            alt={property.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-muted">
-            <HomeIcon className="h-12 w-12 text-muted-foreground/30" />
+      {/* Media Grid - Style collage si plusieurs médias */}
+      {mediaCount >= 3 ? (
+        <div className="relative grid grid-rows-2 gap-0.5 aspect-[4/3] overflow-hidden bg-muted">
+          {/* Row 1: 2 images */}
+          <div className="grid grid-cols-2 gap-0.5">
+            {allMedia.slice(0, 2).map((media, index) => (
+              <div key={index} className="relative overflow-hidden">
+                {media.isVideo ? (
+                  <div className="relative h-full w-full">
+                    <video src={media.url} className="h-full w-full object-cover" muted />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <Play className="h-8 w-8 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <img src={media.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                )}
+              </div>
+            ))}
           </div>
-        )}
-        {property.is_premium && (
-          <Badge className="absolute top-3 left-3 gradient-gold border-0">
-            Premium
-          </Badge>
-        )}
-        <Button
-          size="icon"
-          variant="secondary"
-          className="absolute top-3 right-3 h-9 w-9 rounded-full backdrop-blur-sm bg-white/90"
-          onClick={handleToggleFavorite}
-          disabled={toggleFavorite.isPending}
-        >
-          <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
-        </Button>
-      </div>
+          
+          {/* Row 2: 3 images */}
+          <div className="grid grid-cols-3 gap-0.5">
+            {allMedia.slice(2, 5).map((media, index) => (
+              <div key={index} className="relative overflow-hidden">
+                {media.isVideo ? (
+                  <div className="relative h-full w-full">
+                    <video src={media.url} className="h-full w-full object-cover" muted />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <Play className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <img src={media.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                )}
+                {/* Overlay +X sur la dernière image */}
+                {index === 2 && mediaCount > 5 && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <span className="text-white text-xl font-bold">+{mediaCount - 5}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+            {/* Fill empty slots */}
+            {allMedia.length < 5 && Array.from({ length: Math.max(0, 3 - (allMedia.length - 2)) }).map((_, i) => (
+              <div key={`empty-${i}`} className="bg-muted" />
+            ))}
+          </div>
+          
+          {/* Badges */}
+          {property.is_premium && (
+            <Badge className="absolute top-3 left-3 gradient-gold border-0 z-10">
+              Premium
+            </Badge>
+          )}
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute top-3 right-3 h-9 w-9 rounded-full backdrop-blur-sm bg-white/90 z-10"
+            onClick={handleToggleFavorite}
+            disabled={toggleFavorite.isPending}
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
+          </Button>
+        </div>
+      ) : (
+        /* Single image layout */
+        <div className="relative aspect-video overflow-hidden bg-muted">
+          {primaryMedia ? (
+            primaryMedia.isVideo ? (
+              <div className="relative h-full w-full">
+                <video src={primaryMedia.url} className="h-full w-full object-cover" muted />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <Play className="h-12 w-12 text-white" />
+                </div>
+              </div>
+            ) : (
+              <img
+                src={primaryMedia.url}
+                alt={property.title}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+            )
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-muted">
+              <HomeIcon className="h-12 w-12 text-muted-foreground/30" />
+            </div>
+          )}
+          {property.is_premium && (
+            <Badge className="absolute top-3 left-3 gradient-gold border-0">
+              Premium
+            </Badge>
+          )}
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute top-3 right-3 h-9 w-9 rounded-full backdrop-blur-sm bg-white/90"
+            onClick={handleToggleFavorite}
+            disabled={toggleFavorite.isPending}
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
+          </Button>
+        </div>
+      )}
 
       <CardContent className="p-4">
         <div className="space-y-2">

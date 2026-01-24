@@ -8,23 +8,39 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Upload, Home, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Upload, Home, X, Play } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { useCreateProperty, useAddPropertyImage } from '@/hooks/useProperties';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-const cities = ['Libreville', 'Port Gentil', 'Franceville', 'Oyem', 'Moanda'];
+// Toutes les villes du Gabon
+const gabonCities = [
+  'Libreville', 'Port-Gentil', 'Franceville', 'Oyem', 'Moanda',
+  'Mouila', 'Lambaréné', 'Tchibanga', 'Koulamoutou', 'Makokou',
+  'Bitam', 'Gamba', 'Mounana', 'Ntoum', 'Lastoursville',
+  'Akanda', 'Owendo', 'Ndjolé', 'Cap Estérias', 'Fougamou',
+  'Booué', 'Ndendé', 'Mayumba', 'Mimongo', 'Okondja',
+  'Mékambo', 'Minvoul', 'Cocobeach', 'Mbigou', 'Lekoni'
+].sort();
+
 const propertyTypes = [
   { value: 'apartment', label: 'Appartement' },
   { value: 'villa', label: 'Villa' },
   { value: 'studio', label: 'Studio' },
   { value: 'house', label: 'Maison' },
   { value: 'duplex', label: 'Duplex' },
+  { value: 'terrain', label: 'Terrain' },
+  { value: 'commercial', label: 'Local commercial' },
 ];
 
-const MAX_IMAGES = 20;
+const listingTypes = [
+  { value: 'rent', label: 'À louer' },
+  { value: 'sale', label: 'À vendre' },
+];
+
+const MAX_MEDIA = 20;
 
 const CreateProperty = () => {
   const { user, role, isAuthenticated, isLoading } = useAuth();
@@ -40,6 +56,7 @@ const CreateProperty = () => {
     neighborhood: '',
     address: '',
     type: 'apartment',
+    listing_type: 'rent',
     price: '',
     rooms: '1',
     bathrooms: '1',
@@ -48,8 +65,8 @@ const CreateProperty = () => {
     is_published: true,
   });
 
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [media, setMedia] = useState<File[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<{ url: string; isVideo: boolean }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   if (isLoading) {
@@ -64,17 +81,17 @@ const CreateProperty = () => {
     return <Navigate to="/" replace />;
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     const newFiles = Array.from(files);
-    const totalImages = images.length + newFiles.length;
+    const totalMedia = media.length + newFiles.length;
 
-    if (totalImages > MAX_IMAGES) {
+    if (totalMedia > MAX_MEDIA) {
       toast({
         title: 'Limite atteinte',
-        description: `Vous pouvez ajouter maximum ${MAX_IMAGES} fichiers`,
+        description: `Vous pouvez ajouter maximum ${MAX_MEDIA} fichiers`,
         variant: 'destructive',
       });
       return;
@@ -96,27 +113,24 @@ const CreateProperty = () => {
     });
 
     // Generate previews
-    const newPreviews: string[] = [];
     validFiles.forEach((file) => {
+      const isVideo = file.type.startsWith('video/');
       const reader = new FileReader();
       reader.onloadend = () => {
-        newPreviews.push(reader.result as string);
-        if (newPreviews.length === validFiles.length) {
-          setImagePreviews(prev => [...prev, ...newPreviews]);
-        }
+        setMediaPreviews(prev => [...prev, { url: reader.result as string, isVideo }]);
       };
       reader.readAsDataURL(file);
     });
 
-    setImages(prev => [...prev, ...validFiles]);
+    setMedia(prev => [...prev, ...validFiles]);
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  const removeMedia = (index: number) => {
+    setMedia(prev => prev.filter((_, i) => i !== index));
+    setMediaPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadImage = async (file: File, propertyId: string): Promise<string | null> => {
+  const uploadFile = async (file: File, propertyId: string): Promise<string | null> => {
     try {
       const isVideo = file.type.startsWith('video/');
       const fileExt = file.name.split('.').pop()?.toLowerCase() || (isVideo ? 'mp4' : 'jpg');
@@ -208,7 +222,7 @@ const CreateProperty = () => {
         city: formData.city,
         neighborhood: formData.neighborhood || null,
         address: formData.address || null,
-        type: formData.type,
+        type: formData.listing_type, // rent ou sale
         price: parseInt(formData.price),
         rooms: parseInt(formData.rooms),
         bathrooms: parseInt(formData.bathrooms),
@@ -217,14 +231,14 @@ const CreateProperty = () => {
         is_published: formData.is_published,
       });
 
-      // Upload images
-      if (images.length > 0 && property.id) {
-        for (let i = 0; i < images.length; i++) {
-          const imageUrl = await uploadImage(images[i], property.id);
-          if (imageUrl) {
+      // Upload media files
+      if (media.length > 0 && property.id) {
+        for (let i = 0; i < media.length; i++) {
+          const mediaUrl = await uploadFile(media[i], property.id);
+          if (mediaUrl) {
             await addImage.mutateAsync({
               propertyId: property.id,
-              url: imageUrl,
+              url: mediaUrl,
               isPrimary: i === 0,
             });
           }
@@ -250,7 +264,7 @@ const CreateProperty = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-muted/30 pb-20 md:pb-0">
       <Navbar />
 
       <div className="container py-8 max-w-3xl">
@@ -273,6 +287,27 @@ const CreateProperty = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Type d'annonce: Location ou Vente */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Type d'annonce</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {listingTypes.map(type => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, listing_type: type.value }))}
+                      className={`p-4 rounded-xl border-2 text-center font-medium transition-all ${
+                        formData.listing_type === type.value 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Basic Info */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Informations générales</h3>
@@ -319,7 +354,9 @@ const CreateProperty = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="price">Prix (CFA) *</Label>
+                    <Label htmlFor="price">
+                      Prix (CFA) * {formData.listing_type === 'rent' ? '/ mois' : ''}
+                    </Label>
                     <Input
                       id="price"
                       type="number"
@@ -347,7 +384,7 @@ const CreateProperty = () => {
                         <SelectValue placeholder="Sélectionner" />
                       </SelectTrigger>
                       <SelectContent>
-                        {cities.map(city => (
+                        {gabonCities.map(city => (
                           <SelectItem key={city} value={city}>{city}</SelectItem>
                         ))}
                       </SelectContent>
@@ -393,7 +430,7 @@ const CreateProperty = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1,2,3,4,5,6,7,8].map(n => (
+                        {[1,2,3,4,5,6,7,8,9,10].map(n => (
                           <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
                         ))}
                       </SelectContent>
@@ -431,21 +468,23 @@ const CreateProperty = () => {
                 </div>
               </div>
 
-              {/* Images & Videos */}
+              {/* Photos & Videos */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Photos & Vidéos ({images.length}/{MAX_IMAGES})</h3>
+                <h3 className="text-lg font-semibold">
+                  Photos & Vidéos ({media.length}/{MAX_MEDIA})
+                </h3>
                 
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <input
                     type="file"
-                    id="images"
+                    id="media"
                     accept="image/*,video/*"
                     multiple
-                    onChange={handleImageChange}
+                    onChange={handleMediaChange}
                     className="hidden"
                   />
                   <label
-                    htmlFor="images"
+                    htmlFor="media"
                     className="cursor-pointer flex flex-col items-center gap-2"
                   >
                     <Upload className="h-10 w-10 text-muted-foreground" />
@@ -453,24 +492,29 @@ const CreateProperty = () => {
                       Cliquez pour ajouter des photos ou vidéos
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Images (max 10MB) • Vidéos (max 100MB) • Maximum {MAX_IMAGES} fichiers
+                      Images (max 10MB) • Vidéos (max 100MB) • Maximum {MAX_MEDIA} fichiers
                     </span>
                   </label>
                 </div>
 
-                {imagePreviews.length > 0 && (
+                {mediaPreviews.length > 0 && (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                    {imagePreviews.map((preview, index) => (
+                    {mediaPreviews.map((preview, index) => (
                       <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
-                        {images[index]?.type.startsWith('video/') ? (
-                          <video
-                            src={preview}
-                            className="h-full w-full object-cover"
-                            muted
-                          />
+                        {preview.isVideo ? (
+                          <div className="relative h-full w-full">
+                            <video
+                              src={preview.url}
+                              className="h-full w-full object-cover"
+                              muted
+                            />
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                              <Play className="h-8 w-8 text-white" />
+                            </div>
+                          </div>
                         ) : (
                           <img
-                            src={preview}
+                            src={preview.url}
                             alt={`Preview ${index + 1}`}
                             className="h-full w-full object-cover"
                           />
@@ -480,15 +524,10 @@ const CreateProperty = () => {
                             Principal
                           </span>
                         )}
-                        {images[index]?.type.startsWith('video/') && (
-                          <span className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
-                            Vidéo
-                          </span>
-                        )}
                         <button
                           type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeMedia(index)}
+                          className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -504,53 +543,46 @@ const CreateProperty = () => {
                 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <Label htmlFor="is_published">Publier immédiatement</Label>
+                    <p className="font-medium">Annonce Premium</p>
                     <p className="text-sm text-muted-foreground">
-                      L'annonce sera visible par tous les utilisateurs
+                      Mettez votre annonce en avant
                     </p>
                   </div>
                   <Switch
-                    id="is_published"
-                    checked={formData.is_published}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_published: checked }))}
+                    checked={formData.is_premium}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_premium: checked }))}
                   />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <Label htmlFor="is_premium">Annonce Premium</Label>
+                    <p className="font-medium">Publier immédiatement</p>
                     <p className="text-sm text-muted-foreground">
-                      Mise en avant dans les résultats de recherche
+                      Rendre l'annonce visible après création
                     </p>
                   </div>
                   <Switch
-                    id="is_premium"
-                    checked={formData.is_premium}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_premium: checked }))}
+                    checked={formData.is_published}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_published: checked }))}
                   />
                 </div>
               </div>
 
-              {/* Submit */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button type="button" variant="outline" className="flex-1" asChild>
-                  <Link to="/dashboard/owner">Annuler</Link>
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="flex-1 gradient-gold"
-                  disabled={createProperty.isPending || isUploading}
-                >
-                  {(createProperty.isPending || isUploading) ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isUploading ? 'Upload des images...' : 'Création...'}
-                    </>
-                  ) : (
-                    'Créer l\'annonce'
-                  )}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                className="w-full gradient-gold"
+                size="lg"
+                disabled={isUploading || createProperty.isPending}
+              >
+                {isUploading || createProperty.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : (
+                  'Créer l\'annonce'
+                )}
+              </Button>
             </form>
           </CardContent>
         </Card>

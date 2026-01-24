@@ -5,12 +5,21 @@ import { Navbar } from '@/components/Navbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PropertyCard } from '@/components/PropertyCard';
 import { Footer } from '@/components/Footer';
+import { MobileNavbar } from '@/components/MobileNavbar';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProperties } from '@/hooks/useProperties';
 import { usePublicStats } from '@/hooks/useStats';
 
-const cities = ['Libreville', 'Port Gentil', 'Franceville', 'Oyem', 'Moanda'];
+// Toutes les villes du Gabon
+const gabonCities = [
+  'Libreville', 'Port-Gentil', 'Franceville', 'Oyem', 'Moanda',
+  'Mouila', 'Lambaréné', 'Tchibanga', 'Koulamoutou', 'Makokou',
+  'Bitam', 'Gamba', 'Mounana', 'Ntoum', 'Lastoursville',
+  'Akanda', 'Owendo', 'Ndjolé', 'Cap Estérias', 'Fougamou',
+  'Booué', 'Ndendé', 'Mayumba', 'Mimongo', 'Okondja',
+  'Mékambo', 'Minvoul', 'Cocobeach', 'Mbigou', 'Lekoni'
+].sort();
 
 const Index = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -31,7 +40,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Navbar onOpenAuth={openAuthModal} />
 
       {/* Hero Section */}
@@ -56,7 +65,7 @@ const Index = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Toutes les villes</SelectItem>
-                    {cities.map(city => (
+                    {gabonCities.map(city => (
                       <SelectItem key={city} value={city}>{city}</SelectItem>
                     ))}
                   </SelectContent>
@@ -71,8 +80,11 @@ const Index = () => {
                   <SelectContent>
                     <SelectItem value="all">Tous</SelectItem>
                     <SelectItem value="rent">Location</SelectItem>
+                    <SelectItem value="sale">Vente</SelectItem>
                     <SelectItem value="apartment">Appartement</SelectItem>
                     <SelectItem value="villa">Villa</SelectItem>
+                    <SelectItem value="studio">Studio</SelectItem>
+                    <SelectItem value="house">Maison</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -174,6 +186,9 @@ const Index = () => {
       />
 
       <Footer />
+      
+      {/* Mobile Bottom Navigation */}
+      <MobileNavbar onOpenAuth={openAuthModal} />
     </div>
   );
 };

@@ -3,13 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Home, User, Loader2 } from 'lucide-react';
+import { Home, User, Loader2, Building2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import { cn } from '@/lib/utils';
+import logo from '@/assets/logo-domia.png';
 
 interface AuthModalProps {
   open: boolean;
@@ -33,7 +33,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'tenant' as 'owner' | 'tenant'
+    role: '' as 'owner' | 'tenant' | ''
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -62,6 +62,15 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!registerData.role) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez sélectionner votre type de compte',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     if (registerData.password !== registerData.confirmPassword) {
       toast({
@@ -95,7 +104,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
         description: 'Votre compte a été créé avec succès !',
       });
       onOpenChange(false);
-      setRegisterData({ fullname: '', email: '', password: '', confirmPassword: '', role: 'tenant' });
+      setRegisterData({ fullname: '', email: '', password: '', confirmPassword: '', role: '' });
     } else {
       toast({
         title: 'Erreur',
@@ -168,29 +177,63 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
 
           <TabsContent value="register" className="space-y-4">
             <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Type de compte</Label>
-                <RadioGroup
-                  value={registerData.role}
-                  onValueChange={(value) => setRegisterData({ ...registerData, role: value as 'owner' | 'tenant' })}
-                  className="flex gap-4"
-                  disabled={loading}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="tenant" id="register-tenant" />
-                    <Label htmlFor="register-tenant" className="flex items-center gap-2 cursor-pointer">
-                      <User className="h-4 w-4" />
-                      Locataire
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="owner" id="register-owner" />
-                    <Label htmlFor="register-owner" className="flex items-center gap-2 cursor-pointer">
-                      <Home className="h-4 w-4" />
-                      Propriétaire
-                    </Label>
-                  </div>
-                </RadioGroup>
+              {/* Type de compte - VISIBLE ET OBLIGATOIRE */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">
+                  Je suis un(e) <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRegisterData({ ...registerData, role: 'tenant' })}
+                    disabled={loading}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                      registerData.role === 'tenant' 
+                        ? "border-primary bg-primary/5 shadow-md" 
+                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-12 h-12 rounded-full flex items-center justify-center",
+                      registerData.role === 'tenant' ? "bg-primary text-primary-foreground" : "bg-muted"
+                    )}>
+                      <User className="h-6 w-6" />
+                    </div>
+                    <span className="font-medium">Locataire</span>
+                    <span className="text-xs text-muted-foreground text-center">
+                      Je cherche un logement
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRegisterData({ ...registerData, role: 'owner' })}
+                    disabled={loading}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                      registerData.role === 'owner' 
+                        ? "border-accent bg-accent/5 shadow-md" 
+                        : "border-border hover:border-accent/50 hover:bg-muted/50"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-12 h-12 rounded-full flex items-center justify-center",
+                      registerData.role === 'owner' ? "gradient-gold" : "bg-muted"
+                    )}>
+                      <Building2 className={cn("h-6 w-6", registerData.role === 'owner' && "text-white")} />
+                    </div>
+                    <span className="font-medium">Propriétaire</span>
+                    <span className="text-xs text-muted-foreground text-center">
+                      Je publie des annonces
+                    </span>
+                  </button>
+                </div>
+                {!registerData.role && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Sélectionnez votre type de compte pour continuer
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -242,7 +285,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                 />
               </div>
 
-              <Button type="submit" className="w-full gradient-gold" disabled={loading}>
+              <Button type="submit" className="w-full gradient-gold" disabled={loading || !registerData.role}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

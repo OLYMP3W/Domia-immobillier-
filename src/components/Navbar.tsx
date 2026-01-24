@@ -15,7 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { useUnreadMessagesCount } from '@/hooks/useMessages';
 import { useUnreadNotificationsCount } from '@/hooks/useNotifications';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import logo from '@/assets/logo.png';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import logo from '@/assets/logo-domia.png';
 
 interface NavbarProps {
   onOpenAuth?: (type: 'login' | 'register') => void;
@@ -27,8 +28,12 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
   const { data: unreadNotifications = 0 } = useUnreadNotificationsCount();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { isInstalled } = usePWAInstall();
   
   const totalUnread = unreadMessages + unreadNotifications;
+  
+  // Cacher le bouton télécharger si déjà installé
+  const showDownloadButton = !isInstalled;
 
   const handleMobileNavigation = (path: string) => {
     setMobileMenuOpen(false);
@@ -51,12 +56,14 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/install">
-              <Download className="mr-2 h-4 w-4" />
-              Télécharger
-            </Link>
-          </Button>
+          {showDownloadButton && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/install">
+                <Download className="mr-2 h-4 w-4" />
+                Télécharger
+              </Link>
+            </Button>
+          )}
           
           {!isAuthenticated ? (
             <div className="flex items-center gap-2 animate-fade-in">
@@ -209,13 +216,15 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                         <Settings className="h-5 w-5" />
                         Paramètres
                       </button>
-                      <button
-                        onClick={() => handleMobileNavigation('/install')}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                      >
-                        <Download className="h-5 w-5" />
-                        Télécharger l'app
-                      </button>
+                      {showDownloadButton && (
+                        <button
+                          onClick={() => handleMobileNavigation('/install')}
+                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+                        >
+                          <Download className="h-5 w-5" />
+                          Télécharger l'app
+                        </button>
+                      )}
                     </nav>
 
                     <Button
@@ -229,13 +238,15 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                   </>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    <button
-                      onClick={() => handleMobileNavigation('/install')}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                    >
-                      <Download className="h-5 w-5" />
-                      Télécharger l'app
-                    </button>
+                    {showDownloadButton && (
+                      <button
+                        onClick={() => handleMobileNavigation('/install')}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+                      >
+                        <Download className="h-5 w-5" />
+                        Télécharger l'app
+                      </button>
+                    )}
                     <Button
                       variant="outline"
                       className="w-full"
