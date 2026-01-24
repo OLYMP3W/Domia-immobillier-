@@ -51,7 +51,7 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center space-x-2 animate-fade-in">
           <img src={logo} alt="Domia" className="h-8 w-8 sm:h-10 sm:w-10" />
-          <span className="text-xl sm:text-2xl font-black text-primary">omia</span>
+          <span className="text-xl sm:text-2xl font-black text-primary">Domia</span>
         </Link>
 
         {/* Desktop Nav */}
