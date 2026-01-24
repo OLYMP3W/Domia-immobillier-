@@ -17,7 +17,7 @@ export const Footer = () => {
               La plateforme de référence pour la location et la vente immobilière au Gabon.
             </p>
             <div className="flex gap-3">
-              <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors">
+              <a href="https://www.facebook.com/profile.php?id=61583603153181" className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
               <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors">
