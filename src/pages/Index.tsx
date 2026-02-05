@@ -146,7 +146,7 @@ const Index = () => {
             </div>
           ) : properties.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {properties.slice(0, 6).map((property) => (
+              {properties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
               ))}
             </div>
