@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, User, Bell, Shield, Save, Home, Camera } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Bell, Shield, Save, Home, Camera, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +23,7 @@ const Settings = () => {
   const [formData, setFormData] = useState({
     fullname: '',
     phone: '',
+    whatsapp: '',
     email_notifications: true,
     push_notifications: true,
   });
@@ -34,6 +35,7 @@ const Settings = () => {
         ...prev,
         fullname: profile.fullname || '',
         phone: profile.phone || '',
+        whatsapp: (profile as any).whatsapp || '',
       }));
     }
   }, [profile]);
@@ -233,6 +235,22 @@ const Settings = () => {
                     placeholder="+241 XX XX XX XX"
                     className="mt-1"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="whatsapp" className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-green-500" />
+                    Numéro WhatsApp
+                  </Label>
+                  <Input
+                    id="whatsapp"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                    placeholder="+241 XX XX XX XX"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Les utilisateurs pourront vous contacter directement sur WhatsApp
+                  </p>
                 </div>
               </div>
             </CardContent>

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageBubble } from './MessageBubble';
 import { Conversation, Message } from '@/types/database';
@@ -27,7 +26,8 @@ export const ChatWindow = ({
 }: ChatWindowProps) => {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
   const sendMessage = useSendMessageToConversation();
@@ -35,8 +35,8 @@ export const ChatWindow = ({
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -45,7 +45,7 @@ export const ChatWindow = ({
     if (conversation?.id && conversation.unread_count && conversation.unread_count > 0) {
       markAsRead.mutate(conversation.id);
     }
-  }, [conversation?.id]);
+  }, [conversation?.id, conversation?.unread_count]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || !conversation || !user) return;
@@ -117,8 +117,11 @@ export const ChatWindow = ({
         </Link>
       </div>
 
-      {/* Messages */}
-      <ScrollArea ref={scrollRef} className="flex-1 p-4">
+      {/* Messages - Custom scrollable container */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto p-4"
+      >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -144,9 +147,11 @@ export const ChatWindow = ({
                 />
               );
             })}
+            {/* Invisible element to scroll to */}
+            <div ref={messagesEndRef} />
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* Input */}
       <div className="p-4 border-t bg-card">

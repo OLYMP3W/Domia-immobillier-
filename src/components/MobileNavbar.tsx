@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, Plus, MessageSquare, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadMessagesCount } from '@/hooks/useMessages';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -13,8 +14,14 @@ export const MobileNavbar = ({ onOpenAuth }: MobileNavbarProps) => {
   const { isAuthenticated, role } = useAuth();
   const location = useLocation();
   const { data: unreadMessages = 0 } = useUnreadMessagesCount();
+  const { isInstalled } = usePWAInstall();
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Navbar mobile uniquement visible quand l'app est installée (PWA)
+  if (!isInstalled) {
+    return null;
+  }
 
   // Navigation items dynamiques selon le rôle
   const navItems = [

@@ -120,7 +120,56 @@ export const PropertyMediaGrid = ({ media, title = 'Property', className = '' }:
     );
   }
 
-  // Layout style collage (3+ images) - 2 en haut, 3 en bas
+  // Layout pour 3 images: 1 grande à gauche, 2 petites à droite
+  if (displayMedia.length === 3) {
+    return (
+      <>
+        <div className={`grid grid-cols-2 gap-1 rounded-xl overflow-hidden aspect-[4/3] ${className}`}>
+          <div className="row-span-2">
+            {renderMediaItem(displayMedia[0], 0, 'h-full')}
+          </div>
+          <div className="grid grid-rows-2 gap-1">
+            {displayMedia.slice(1, 3).map((item, index) => (
+              <div key={index + 1} className="overflow-hidden">
+                {renderMediaItem(item, index + 1)}
+              </div>
+            ))}
+          </div>
+        </div>
+        <MediaDialog 
+          media={normalizedMedia}
+          selectedIndex={selectedIndex}
+          onClose={() => setSelectedIndex(null)}
+          onPrev={handlePrev}
+          onNext={handleNext}
+        />
+      </>
+    );
+  }
+
+  // Layout pour 4 images: grille 2x2
+  if (displayMedia.length === 4) {
+    return (
+      <>
+        <div className={`grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[4/3] ${className}`}>
+          {displayMedia.map((item, index) => (
+            <div key={index} className="overflow-hidden">
+              {renderMediaItem(item, index)}
+            </div>
+          ))}
+        </div>
+        <MediaDialog 
+          media={normalizedMedia}
+          selectedIndex={selectedIndex}
+          onClose={() => setSelectedIndex(null)}
+          onPrev={handlePrev}
+          onNext={handleNext}
+        />
+      </>
+    );
+  }
+
+  // Layout style collage (5+ images) - 2 en haut, 3 en bas
   return (
     <>
       <div className={`grid grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[4/3] ${className}`}>
@@ -148,10 +197,6 @@ export const PropertyMediaGrid = ({ media, title = 'Property', className = '' }:
                 </div>
               )}
             </div>
-          ))}
-          {/* Fill empty slots if less than 5 media */}
-          {displayMedia.length < 5 && Array.from({ length: 5 - displayMedia.length }).map((_, i) => (
-            <div key={`empty-${i}`} className="bg-muted" />
           ))}
         </div>
       </div>

@@ -1,23 +1,68 @@
 import { Link } from 'react-router-dom';
 import { Home, Mail, Phone, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import logo from '@/assets/logo-domia.png';
 
 export const Footer = () => {
+  const { isInstalled } = usePWAInstall();
+
+  // Si l'app est installée (PWA), affiche un footer minimal
+  if (isInstalled) {
+    return (
+      <footer className="border-t bg-muted/30 py-6 pb-24">
+        <div className="container">
+          <div className="flex flex-col items-center gap-4">
+            {/* Réseaux sociaux uniquement */}
+            <div className="flex gap-3">
+              <a 
+                href="https://www.facebook.com/profile.php?id=61583603153181" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a 
+                href="#" 
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a 
+                href="#" 
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+            </div>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Domia</p>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  // Footer complet pour le site web
   return (
     <footer className="border-t bg-muted/30 py-12">
       <div className="container">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            <Link to="/" className="flex items-center space-x-2 mb-4">
+            <Link to="/" className="flex items-center space-x-1 mb-4">
               <img src={logo} alt="Domia" className="h-10 w-10" />
-              <span className="text-2xl font-black text-primary">Domia</span>
+              <span className="text-2xl font-black text-primary">omia</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
               La plateforme de référence pour la location et la vente immobilière au Gabon.
             </p>
             <div className="flex gap-3">
-              <a href="https://www.facebook.com/profile.php?id=61583603153181" className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors">
+              <a 
+                href="https://www.facebook.com/profile.php?id=61583603153181" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors"
+              >
                 <Facebook className="h-5 w-5" />
               </a>
               <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-colors">

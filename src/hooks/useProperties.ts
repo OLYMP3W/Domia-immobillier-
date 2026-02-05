@@ -16,7 +16,8 @@ export const useProperties = (filters?: {
         .from('properties')
         .select(`
           *,
-          images:property_images(*)
+          images:property_images(*),
+          media:property_media(*)
         `)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
@@ -47,11 +48,32 @@ export const useProperties = (filters?: {
 
       const profileMap = new Map(publicProfiles?.map(p => [p.user_id, { fullname: p.fullname, avatar_url: p.avatar_url }]) || []);
 
-      // Keep owner_id for profile links but don't expose sensitive data
-      return (data || []).map(property => ({
-        ...property,
-        owner: profileMap.get(property.owner_id) || null,
-      })) as Property[];
+      // Merge images and media, prioritizing media (which includes videos)
+      return (data || []).map(property => {
+        // Combine property_images and property_media into unified images array
+        const allImages = [
+          ...(property.images || []),
+          ...(property.media || []).map((m: any) => ({
+            id: m.id,
+            property_id: m.property_id,
+            url: m.url,
+            is_primary: m.is_primary,
+            created_at: m.created_at,
+            type: m.type, // 'image' or 'video'
+          })),
+        ];
+
+        // Remove duplicates based on URL
+        const uniqueImages = allImages.filter((img, index, self) => 
+          index === self.findIndex(t => t.url === img.url)
+        );
+
+        return {
+          ...property,
+          images: uniqueImages,
+          owner: profileMap.get(property.owner_id) || null,
+        };
+      }) as Property[];
     },
   });
 };
@@ -68,13 +90,37 @@ export const useMyProperties = () => {
         .from('properties')
         .select(`
           *,
-          images:property_images(*)
+          images:property_images(*),
+          media:property_media(*)
         `)
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Property[];
+      
+      // Merge images and media
+      return (data || []).map(property => {
+        const allImages = [
+          ...(property.images || []),
+          ...(property.media || []).map((m: any) => ({
+            id: m.id,
+            property_id: m.property_id,
+            url: m.url,
+            is_primary: m.is_primary,
+            created_at: m.created_at,
+            type: m.type,
+          })),
+        ];
+
+        const uniqueImages = allImages.filter((img, index, self) => 
+          index === self.findIndex(t => t.url === img.url)
+        );
+
+        return {
+          ...property,
+          images: uniqueImages,
+        };
+      }) as Property[];
     },
     enabled: !!user,
   });
@@ -88,7 +134,8 @@ export const useProperty = (id: string) => {
         .from('properties')
         .select(`
           *,
-          images:property_images(*)
+          images:property_images(*),
+          media:property_media(*)
         `)
         .eq('id', id)
         .single();
@@ -112,8 +159,26 @@ export const useProperty = (id: string) => {
       // Increment views
       await supabase.rpc('increment_property_views', { property_id: id });
       
+      // Merge images and media
+      const allImages = [
+        ...(data.images || []),
+        ...(data.media || []).map((m: any) => ({
+          id: m.id,
+          property_id: m.property_id,
+          url: m.url,
+          is_primary: m.is_primary,
+          created_at: m.created_at,
+          type: m.type,
+        })),
+      ];
+
+      const uniqueImages = allImages.filter((img, index, self) => 
+        index === self.findIndex(t => t.url === img.url)
+      );
+      
       return {
         ...data,
+        images: uniqueImages,
         owner_id: data.owner_id,
         owner: ownerPublicProfile ? {
           id: '',
