@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize, Send } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize, Send, MessageCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -45,25 +45,15 @@ const PropertyDetail = () => {
 
   const handleToggleFavorite = () => {
     if (!isAuthenticated) {
-      toast({
-        title: 'Connexion requise',
-        description: 'Connectez-vous pour ajouter aux favoris',
-        variant: 'destructive',
-      });
+      toast({ title: 'Connexion requise', description: 'Connectez-vous pour ajouter aux favoris', variant: 'destructive' });
       return;
     }
-    if (id) {
-      toggleFavorite.mutate(id);
-    }
+    if (id) toggleFavorite.mutate(id);
   };
 
   const handleOpenMessageDialog = () => {
     if (!isAuthenticated) {
-      toast({
-        title: 'Connexion requise',
-        description: 'Connectez-vous pour envoyer un message',
-        variant: 'destructive',
-      });
+      toast({ title: 'Connexion requise', description: 'Connectez-vous pour envoyer un message', variant: 'destructive' });
       return;
     }
     setMessageDialogOpen(true);
@@ -71,46 +61,34 @@ const PropertyDetail = () => {
 
   const handleSendMessage = async () => {
     if (!messageContent.trim() || !property?.owner_id) return;
-
     try {
-      await sendMessage.mutateAsync({
-        receiverId: property.owner_id,
-        propertyId: property.id,
-        content: messageContent,
-      });
-      toast({
-        title: 'Message envoyé',
-        description: 'Votre message a été envoyé au propriétaire',
-      });
+      await sendMessage.mutateAsync({ receiverId: property.owner_id, propertyId: property.id, content: messageContent });
+      toast({ title: 'Message envoyé', description: 'Votre message a été envoyé au propriétaire' });
       setMessageDialogOpen(false);
       setMessageContent('');
     } catch (error) {
-      toast({
-        title: 'Erreur',
-        description: "Impossible d'envoyer le message",
-        variant: 'destructive',
-      });
+      toast({ title: 'Erreur', description: "Impossible d'envoyer le message", variant: 'destructive' });
     }
   };
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: property?.title,
-          text: `Découvrez cette propriété sur Domia: ${property?.title}`,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Share cancelled');
-      }
+        await navigator.share({ title: property?.title, text: `Découvrez cette propriété sur Domia: ${property?.title}`, url: window.location.href });
+      } catch (error) { /* cancelled */ }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: 'Lien copié',
-        description: 'Le lien a été copié dans le presse-papier',
-      });
+      toast({ title: 'Lien copié', description: 'Le lien a été copié dans le presse-papier' });
     }
+  };
+
+  // Ouvrir WhatsApp
+  const handleWhatsApp = () => {
+    const whatsapp = (property?.owner as any)?.whatsapp || property?.owner?.phone;
+    if (!whatsapp) return;
+    const cleanNumber = whatsapp.replace(/[^0-9+]/g, '').replace('+', '');
+    const message = encodeURIComponent(`Bonjour, je suis intéressé(e) par votre annonce "${property?.title}" sur Domia.`);
+    window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
   };
 
   if (isLoading) {
@@ -133,9 +111,7 @@ const PropertyDetail = () => {
           <Home className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
           <h1 className="text-2xl font-bold mb-2">Propriété non trouvée</h1>
           <p className="text-muted-foreground mb-6">Cette annonce n'existe pas ou a été supprimée</p>
-          <Button asChild>
-            <Link to="/properties">Voir toutes les annonces</Link>
-          </Button>
+          <Button asChild><Link to="/properties">Voir toutes les annonces</Link></Button>
         </div>
         <Footer />
       </div>
@@ -143,8 +119,8 @@ const PropertyDetail = () => {
   }
 
   const images = property.images?.map(img => img.url) || [];
+  const ownerWhatsapp = (property.owner as any)?.whatsapp || property.owner?.phone;
 
-  // Format relative date for publication
   const formatRelativeDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -166,11 +142,7 @@ const PropertyDetail = () => {
       <Navbar />
       
       <div className="container py-4 sm:py-8">
-        <Button
-          variant="ghost"
-          className="mb-4 sm:mb-6"
-          onClick={() => navigate(-1)}
-        >
+        <Button variant="ghost" className="mb-4 sm:mb-6" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Retour
         </Button>
@@ -182,7 +154,7 @@ const PropertyDetail = () => {
               <Carousel className="w-full">
                 <CarouselContent>
                   {images.map((url, index) => {
-                    const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i);
+                    const isVideo = url.toLowerCase().split('?')[0].match(/\.(mp4|webm|ogg|mov)$/);
                     return (
                       <CarouselItem key={index}>
                         <div className="relative aspect-video overflow-hidden rounded-xl">
@@ -190,6 +162,8 @@ const PropertyDetail = () => {
                             <video
                               src={url}
                               controls
+                              preload="metadata"
+                              playsInline
                               className="h-full w-full object-cover"
                             />
                           ) : (
@@ -224,9 +198,7 @@ const PropertyDetail = () => {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <h1 className="text-2xl sm:text-3xl font-bold">{property.title}</h1>
-                    {property.is_premium && (
-                      <Badge className="gradient-gold">Premium</Badge>
-                    )}
+                    {property.is_premium && <Badge className="gradient-gold">Premium</Badge>}
                   </div>
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="mr-2 h-4 w-4 shrink-0" />
@@ -234,11 +206,7 @@ const PropertyDetail = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={handleToggleFavorite}
-                  >
+                  <Button size="icon" variant="outline" onClick={handleToggleFavorite}>
                     <Heart className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
                   </Button>
                   <Button size="icon" variant="outline" onClick={handleShare}>
@@ -249,37 +217,14 @@ const PropertyDetail = () => {
 
               <div className="text-2xl sm:text-3xl font-bold text-gold mb-6">
                 {property.price.toLocaleString()} CFA
+                {property.type === 'rent' && <span className="text-base font-normal text-muted-foreground">/mois</span>}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <Card>
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <Home className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" />
-                    <div className="font-semibold">{property.rooms}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Pièces</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <BedDouble className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" />
-                    <div className="font-semibold">{Math.max(1, property.rooms - 1)}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Chambres</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <Bath className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" />
-                    <div className="font-semibold">{property.bathrooms || 1}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Salle(s) de bain</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <Maximize className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" />
-                    <div className="font-semibold">{property.surface || '-'}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">m²</div>
-                  </CardContent>
-                </Card>
+                <Card><CardContent className="p-3 sm:p-4 text-center"><Home className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" /><div className="font-semibold">{property.rooms}</div><div className="text-xs sm:text-sm text-muted-foreground">Pièces</div></CardContent></Card>
+                <Card><CardContent className="p-3 sm:p-4 text-center"><BedDouble className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" /><div className="font-semibold">{Math.max(1, property.rooms - 1)}</div><div className="text-xs sm:text-sm text-muted-foreground">Chambres</div></CardContent></Card>
+                <Card><CardContent className="p-3 sm:p-4 text-center"><Bath className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" /><div className="font-semibold">{property.bathrooms || 1}</div><div className="text-xs sm:text-sm text-muted-foreground">Salle(s) de bain</div></CardContent></Card>
+                <Card><CardContent className="p-3 sm:p-4 text-center"><Maximize className="h-5 sm:h-6 w-5 sm:w-6 mx-auto mb-2 text-gold" /><div className="font-semibold">{property.surface || '-'}</div><div className="text-xs sm:text-sm text-muted-foreground">m²</div></CardContent></Card>
               </div>
             </div>
 
@@ -323,6 +268,12 @@ const PropertyDetail = () => {
                     <Mail className="mr-2 h-4 w-4" />
                     Envoyer un message
                   </Button>
+                  {ownerWhatsapp && (
+                    <Button variant="outline" className="w-full text-green-600 border-green-200 hover:bg-green-50" onClick={handleWhatsApp}>
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      WhatsApp
+                    </Button>
+                  )}
                   {property.owner?.phone && (
                     <Button variant="outline" className="w-full" asChild>
                       <a href={`tel:${property.owner.phone}`}>
@@ -343,12 +294,6 @@ const PropertyDetail = () => {
                   <div className="flex items-center justify-between">
                     <span>Publication</span>
                     <span className="font-semibold text-gold">{formatRelativeDate(property.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Publié le</span>
-                    <span className="font-semibold text-foreground">
-                      {new Date(property.created_at).toLocaleDateString('fr-FR')}
-                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -390,11 +335,7 @@ const PropertyDetail = () => {
               onClick={handleSendMessage}
               disabled={sendMessage.isPending || !messageContent.trim()}
             >
-              {sendMessage.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
+              {sendMessage.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Envoyer
             </Button>
           </div>

@@ -59,6 +59,8 @@ export const PropertyMediaGrid = ({ media, title = 'Property', className = '' }:
             src={item.url}
             className="h-full w-full object-cover"
             muted
+            preload="metadata"
+            playsInline
           />
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-colors">
             <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">

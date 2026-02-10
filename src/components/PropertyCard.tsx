@@ -17,7 +17,8 @@ interface PropertyCardProps {
 // Détermine si un fichier est une vidéo
 const isVideoUrl = (url: string): boolean => {
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
-  return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+  const urlLower = url.toLowerCase().split('?')[0]; // Ignore query params
+  return videoExtensions.some(ext => urlLower.endsWith(ext));
 };
 
 export const PropertyCard = ({ property }: PropertyCardProps) => {
@@ -55,16 +56,40 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
   const allMedia = property.images?.map(img => ({
     url: img.url,
     is_primary: img.is_primary,
-    isVideo: isVideoUrl(img.url),
+    isVideo: (img as any).type === 'video' || isVideoUrl(img.url),
   })) || [];
   
   const primaryMedia = allMedia.find(m => m.is_primary) || allMedia[0];
   const mediaCount = allMedia.length;
-  const hasVideo = allMedia.some(m => m.isVideo);
 
   const formatPrice = (price: number, type: string) => {
     const formatted = price.toLocaleString('fr-FR');
     return type === 'rent' ? `${formatted} CFA/mois` : `${formatted} CFA`;
+  };
+
+  // Render a single media item (image or video thumbnail)
+  const renderMedia = (media: typeof allMedia[0], className = '') => {
+    if (media.isVideo) {
+      return (
+        <div className={`relative h-full w-full ${className}`}>
+          <video 
+            src={media.url} 
+            className="h-full w-full object-cover" 
+            muted 
+            preload="metadata"
+            playsInline
+          />
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+              <Play className="h-5 w-5 text-primary ml-0.5" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <img src={media.url} alt="" loading="lazy" className={`h-full w-full object-cover ${className}`} />
+    );
   };
 
   return (
@@ -76,16 +101,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
           <div className="grid grid-cols-2 gap-0.5">
             {allMedia.slice(0, 2).map((media, index) => (
               <div key={index} className="relative overflow-hidden">
-                {media.isVideo ? (
-                  <div className="relative h-full w-full">
-                    <video src={media.url} className="h-full w-full object-cover" muted />
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <Play className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-                ) : (
-                  <img src={media.url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                )}
+                {renderMedia(media)}
               </div>
             ))}
           </div>
@@ -94,16 +110,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
           <div className="grid grid-cols-3 gap-0.5">
             {allMedia.slice(2, 5).map((media, index) => (
               <div key={index} className="relative overflow-hidden">
-                {media.isVideo ? (
-                  <div className="relative h-full w-full">
-                    <video src={media.url} className="h-full w-full object-cover" muted />
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <Play className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                ) : (
-                  <img src={media.url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                )}
+                {renderMedia(media)}
                 {/* Overlay +X sur la dernière image */}
                 {index === 2 && mediaCount > 5 && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -138,21 +145,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
         /* Single image layout */
         <div className="relative aspect-video overflow-hidden bg-muted">
           {primaryMedia ? (
-            primaryMedia.isVideo ? (
-              <div className="relative h-full w-full">
-                <video src={primaryMedia.url} className="h-full w-full object-cover" muted />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <Play className="h-12 w-12 text-white" />
-                </div>
-              </div>
-            ) : (
-              <img
-                src={primaryMedia.url}
-                alt={property.title}
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-            )
+            renderMedia(primaryMedia, 'transition-transform duration-500 group-hover:scale-110')
           ) : (
             <div className="h-full w-full flex items-center justify-center bg-muted">
               <HomeIcon className="h-12 w-12 text-muted-foreground/30" />
@@ -179,8 +172,8 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-lg line-clamp-1">{property.title}</h3>
-            <Badge variant="outline" className="ml-2">
-              {property.type === 'rent' ? 'Location' : 'Vente'}
+            <Badge variant="outline" className="ml-2 shrink-0">
+              {property.type === 'rent' ? 'Location' : property.type === 'sale' ? 'Vente' : property.type}
             </Badge>
           </div>
 

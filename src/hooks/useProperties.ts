@@ -149,10 +149,10 @@ export const useProperty = (id: string) => {
         .eq('user_id', data.owner_id)
         .single();
 
-      // Fetch owner private profile for phone (only visible if RLS allows - authenticated users)
+      // Fetch owner private profile for phone and whatsapp (only visible if RLS allows - authenticated users)
       const { data: ownerPrivateProfile } = await supabase
         .from('profiles')
-        .select('phone')
+        .select('phone, whatsapp')
         .eq('user_id', data.owner_id)
         .maybeSingle();
       
@@ -187,6 +187,7 @@ export const useProperty = (id: string) => {
           email: '',
           avatar_url: ownerPublicProfile.avatar_url,
           phone: ownerPrivateProfile?.phone || null,
+          whatsapp: ownerPrivateProfile?.whatsapp || null,
           created_at: '',
           updated_at: '',
         } : null,
