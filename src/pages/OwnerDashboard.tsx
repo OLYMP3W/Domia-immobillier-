@@ -3,7 +3,7 @@ import { Footer } from '@/components/Footer';
 import { MobileNavbar } from '@/components/MobileNavbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Home, Eye, MessageSquare, Bell, Loader2, Settings, Trash2, TrendingUp, DollarSign } from 'lucide-react';
+import { Plus, Home, Eye, MessageSquare, Bell, Loader2, Settings, Trash2, TrendingUp, DollarSign, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
@@ -280,6 +280,11 @@ const OwnerDashboard = () => {
                       <Button variant="outline" size="sm" asChild>
                         <Link to={`/property/${property.id}`}>
                           <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/property/edit/${property.id}`}>
+                          <Pencil className="h-4 w-4" />
                         </Link>
                       </Button>
                       <AlertDialog>

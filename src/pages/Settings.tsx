@@ -80,7 +80,6 @@ const Settings = () => {
         .from('property-images')
         .getPublicUrl(fileName);
 
-      // Update profile with new avatar
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: urlData.publicUrl })
@@ -88,7 +87,6 @@ const Settings = () => {
 
       if (updateError) throw updateError;
 
-      // Also update public_profiles
       await supabase
         .from('public_profiles')
         .update({ avatar_url: urlData.publicUrl })
@@ -122,12 +120,12 @@ const Settings = () => {
         .update({
           fullname: formData.fullname,
           phone: formData.phone,
+          whatsapp: formData.whatsapp,
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      // Also update public_profiles
       await supabase
         .from('public_profiles')
         .update({ fullname: formData.fullname })
@@ -269,9 +267,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Notifications par email</p>
-                  <p className="text-sm text-muted-foreground">
-                    Recevez des mises à jour par email
-                  </p>
+                  <p className="text-sm text-muted-foreground">Recevez des mises à jour par email</p>
                 </div>
                 <Switch
                   checked={formData.email_notifications}
@@ -281,9 +277,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Notifications push</p>
-                  <p className="text-sm text-muted-foreground">
-                    Recevez des notifications sur votre appareil
-                  </p>
+                  <p className="text-sm text-muted-foreground">Recevez des notifications sur votre appareil</p>
                 </div>
                 <Switch
                   checked={formData.push_notifications}
@@ -306,23 +300,14 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Mot de passe</p>
-                  <p className="text-sm text-muted-foreground">
-                    Dernière modification: il y a 30 jours
-                  </p>
+                  <p className="text-sm text-muted-foreground">Dernière modification: il y a 30 jours</p>
                 </div>
-                <Button variant="outline" size="sm">
-                  Modifier
-                </Button>
+                <Button variant="outline" size="sm">Modifier</Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Save Button */}
-          <Button 
-            className="w-full gradient-gold" 
-            onClick={handleSave}
-            disabled={saving}
-          >
+          <Button className="w-full gradient-gold" onClick={handleSave} disabled={saving}>
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
