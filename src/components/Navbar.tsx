@@ -49,9 +49,8 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center space-x-1 animate-fade-in">
-          <img src={logo} alt="Domia" className="h-8 w-8 sm:h-10 sm:w-10" draggable="false" />
-          <span className="text-xl sm:text-2xl font-black text-primary">omia</span>
+        <Link to="/" className="flex items-center animate-fade-in">
+          <img src={logo} alt="Domia" className="h-9 sm:h-11" draggable="false" />
         </Link>
 
         {/* Desktop Nav */}
@@ -154,9 +153,8 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px] sm:w-[320px]">
               <div className="flex flex-col h-full">
-                <div className="flex items-center gap-1 mb-6">
-                  <img src={logo} alt="Domia" className="h-8 w-8" draggable="false" />
-                  <span className="text-xl font-black text-primary">omia</span>
+                <div className="flex items-center mb-6">
+                  <img src={logo} alt="Domia" className="h-9" draggable="false" />
                 </div>
 
                 {isAuthenticated ? (

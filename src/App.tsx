@@ -13,6 +13,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import TenantDashboard from "./pages/TenantDashboard";
 import CreateProperty from "./pages/CreateProperty";
+import EditProperty from "./pages/EditProperty";
 import Settings from "./pages/Settings";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/properties" element={<Properties />} />
               <Route path="/property/new" element={<CreateProperty />} />
+              <Route path="/property/edit/:id" element={<EditProperty />} />
               <Route path="/property/:id" element={<PropertyDetail />} />
               <Route path="/dashboard/owner" element={<OwnerDashboard />} />
               <Route path="/dashboard/tenant" element={<TenantDashboard />} />

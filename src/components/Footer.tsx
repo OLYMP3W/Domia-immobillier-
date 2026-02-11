@@ -49,9 +49,8 @@ export const Footer = () => {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            <Link to="/" className="flex items-center space-x-1 mb-4">
-              <img src={logo} alt="Domia" className="h-10 w-10" />
-              <span className="text-2xl font-black text-primary">omia</span>
+            <Link to="/" className="flex items-center mb-4">
+              <img src={logo} alt="Domia" className="h-11" />
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
               La plateforme de référence pour la location et la vente immobilière au Gabon.

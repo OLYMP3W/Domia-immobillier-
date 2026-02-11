@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Home, User, Loader2, Building2 } from 'lucide-react';
+import { Home, User, Loader2, Building2, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,9 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const [loginData, setLoginData] = useState({
     email: '',
@@ -181,8 +184,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
-            <img src={logo} alt="Domia" className="h-8 w-8" />
-            <span>omia</span>
+            <img src={logo} alt="Domia" className="h-10" />
           </DialogTitle>
           <DialogDescription>
             Connectez-vous ou créez un compte pour accéder à toutes les fonctionnalités
@@ -270,6 +272,17 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                 />
               </div>
 
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 text-sm text-muted-foreground hover:text-primary"
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Mot de passe oublié ?
+                </Button>
+              </div>
+
               <Button type="submit" className="w-full gradient-gold" disabled={loading}>
                 {loading ? (
                   <>
@@ -281,6 +294,64 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
                 )}
               </Button>
             </form>
+
+            {/* Forgot Password Sub-view */}
+            {showForgotPassword && (
+              <div className="absolute inset-0 bg-background p-6 flex flex-col">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="self-start mb-4"
+                  onClick={() => setShowForgotPassword(false)}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Retour
+                </Button>
+                <h3 className="text-lg font-semibold mb-2">Mot de passe oublié</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                </p>
+                <div className="space-y-4">
+                  <Input
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    disabled={forgotLoading}
+                  />
+                  <Button
+                    className="w-full gradient-gold"
+                    disabled={forgotLoading || !forgotEmail.trim()}
+                    onClick={async () => {
+                      setForgotLoading(true);
+                      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+                        redirectTo: `${window.location.origin}/settings`,
+                      });
+                      setForgotLoading(false);
+                      if (error) {
+                        toast({
+                          title: 'Erreur',
+                          description: error.message,
+                          variant: 'destructive',
+                        });
+                      } else {
+                        toast({
+                          title: 'Email envoyé',
+                          description: 'Vérifiez votre boîte mail pour réinitialiser votre mot de passe.',
+                        });
+                        setShowForgotPassword(false);
+                        setForgotEmail('');
+                      }
+                    }}
+                  >
+                    {forgotLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Envoyer le lien
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="register" className="space-y-4">
