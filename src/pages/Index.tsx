@@ -105,19 +105,19 @@ const Index = () => {
         <div className="container">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="text-center animate-fade-in">
-              <div className="mb-2 text-4xl font-bold text-gold">{stats?.properties || 245}</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.properties || 0}</div>
               <div className="text-sm text-muted-foreground">Annonces actives</div>
             </div>
             <div className="text-center animate-fade-in delay-1">
-              <div className="mb-2 text-4xl font-bold text-gold">{stats?.owners || 89}</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.owners || 0}</div>
               <div className="text-sm text-muted-foreground">Propriétaires</div>
             </div>
             <div className="text-center animate-fade-in delay-2">
-              <div className="mb-2 text-4xl font-bold text-gold">{stats?.tenants || 1250}</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.tenants || 0}</div>
               <div className="text-sm text-muted-foreground">Locataires actifs</div>
             </div>
             <div className="text-center animate-fade-in delay-3">
-              <div className="mb-2 text-4xl font-bold text-gold">98%</div>
+              <div className="mb-2 text-4xl font-bold text-gold">{stats?.satisfaction || 0}%</div>
               <div className="text-sm text-muted-foreground">Satisfaction</div>
             </div>
           </div>

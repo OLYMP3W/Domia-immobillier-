@@ -5,9 +5,26 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageBubble } from './MessageBubble';
 import { Conversation, Message } from '@/types/database';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSendMessageToConversation, useMarkConversationAsRead } from '@/hooks/useConversations';
-import { Send, ArrowLeft, Loader2 } from 'lucide-react';
+import { useSendMessageToConversation, useMarkConversationAsRead, useDeleteConversation } from '@/hooks/useConversations';
+import { Send, ArrowLeft, Loader2, Trash2, MoreVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ChatWindowProps {
   conversation: Conversation | null;
@@ -26,12 +43,15 @@ export const ChatWindow = ({
 }: ChatWindowProps) => {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   
   const sendMessage = useSendMessageToConversation();
   const markAsRead = useMarkConversationAsRead();
+  const deleteConversation = useDeleteConversation();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -115,6 +135,53 @@ export const ChatWindow = ({
             )}
           </div>
         </Link>
+
+        {/* Menu options */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Supprimer la discussion
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Confirmation suppression */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette discussion ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Les messages de cette conversation seront supprimés. Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  try {
+                    await deleteConversation.mutateAsync(conversation.id);
+                    toast({ title: 'Discussion supprimée' });
+                    onBack?.();
+                  } catch {
+                    toast({ title: 'Erreur', description: 'Impossible de supprimer', variant: 'destructive' });
+                  }
+                }}
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Messages - Custom scrollable container */}
