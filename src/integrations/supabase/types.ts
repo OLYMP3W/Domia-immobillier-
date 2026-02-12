@@ -522,6 +522,7 @@ export type Database = {
         Args: { p_property_id?: string; p_user_1: string; p_user_2: string }
         Returns: string
       }
+      get_public_stats: { Args: never; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
