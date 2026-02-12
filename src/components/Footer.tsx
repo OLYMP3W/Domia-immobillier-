@@ -44,7 +44,7 @@ export const Footer = () => {
 
   // Footer complet pour le site web
   return (
-    <footer className="border-t bg-muted/30 py-12">
+    <footer className="border-t border-border/50 bg-card/50 backdrop-blur-sm py-12">
       <div className="container">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
