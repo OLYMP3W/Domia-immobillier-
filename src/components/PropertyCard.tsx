@@ -73,11 +73,12 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
       return (
         <div className={`relative h-full w-full ${className}`}>
           <video 
-            src={media.url} 
+            src={`${media.url}#t=0.5`}
             className="h-full w-full object-cover" 
             muted 
             preload="metadata"
             playsInline
+            crossOrigin="anonymous"
           />
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
             <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">

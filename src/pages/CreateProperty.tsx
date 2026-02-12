@@ -236,11 +236,22 @@ const CreateProperty = () => {
         for (let i = 0; i < media.length; i++) {
           const mediaUrl = await uploadFile(media[i], property.id);
           if (mediaUrl) {
-            await addImage.mutateAsync({
-              propertyId: property.id,
-              url: mediaUrl,
-              isPrimary: i === 0,
-            });
+            const isVideo = media[i].type.startsWith('video/');
+            if (isVideo) {
+              // Sauvegarder les vidéos dans property_media
+              await supabase.from('property_media').insert({
+                property_id: property.id,
+                url: mediaUrl,
+                type: 'video',
+                is_primary: i === 0 && media.filter(m => !m.type.startsWith('video/')).length === 0,
+              });
+            } else {
+              await addImage.mutateAsync({
+                propertyId: property.id,
+                url: mediaUrl,
+                isPrimary: i === 0,
+              });
+            }
           }
         }
       }
