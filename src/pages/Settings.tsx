@@ -149,7 +149,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <div className="container py-8 max-w-2xl">

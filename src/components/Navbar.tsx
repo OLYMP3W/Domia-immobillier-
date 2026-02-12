@@ -47,7 +47,7 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center animate-fade-in">
           <img src={logo} alt="Domia" className="h-9 sm:h-11" draggable="false" />
