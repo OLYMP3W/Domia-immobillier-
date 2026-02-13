@@ -57,7 +57,19 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
     if (media.isVideo) {
       return (
         <div className={`relative h-full w-full ${className}`}>
-          <video src={`${media.url}#t=0.5`} className="h-full w-full object-cover" muted preload="metadata" playsInline crossOrigin="anonymous" />
+          <video
+            src={`${media.url}#t=0.5`}
+            className="h-full w-full object-cover"
+            muted
+            playsInline
+            preload="metadata"
+            crossOrigin="anonymous"
+            onLoadedData={(e) => {
+              // Force poster frame
+              const video = e.currentTarget;
+              video.currentTime = 0.5;
+            }}
+          />
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
             <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
               <Play className="h-5 w-5 text-foreground ml-0.5" />
@@ -71,7 +83,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
 
   return (
     <Link to={`/property/${property.id}`} className="group block">
-      <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+      <div className="overflow-hidden rounded-2xl bg-card/80 backdrop-blur-md border border-border/30 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-hover)] hover:-translate-y-1">
         {/* Image principale */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {mediaCount >= 3 ? (
@@ -160,15 +172,21 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
 
           {/* Owner + date */}
           <div className="flex items-center justify-between border-t border-border/50 pt-3">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-7 w-7">
+            <Link
+              to={`/profile/${property.owner_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2.5 group/owner hover:opacity-80 transition-opacity"
+            >
+              <Avatar className="h-8 w-8 ring-2 ring-accent/30">
                 <AvatarImage src={property.owner?.avatar_url || ''} />
-                <AvatarFallback className="bg-accent text-accent-foreground text-xs">
+                <AvatarFallback className="bg-accent text-accent-foreground text-xs font-bold">
                   {property.owner?.fullname?.charAt(0) || 'P'}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-xs font-medium truncate max-w-[120px]">{property.owner?.fullname || 'Propriétaire'}</span>
-            </div>
+              <span className="text-xs font-semibold truncate max-w-[120px] group-hover/owner:text-accent transition-colors">
+                {property.owner?.fullname || 'Propriétaire'}
+              </span>
+            </Link>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
               {formatPropertyDate(property.created_at)}
