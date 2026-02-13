@@ -106,7 +106,19 @@ const PropertyDetail = () => {
                   <CarouselItem key={index}>
                     <div className="relative aspect-[16/9] md:aspect-[21/9] overflow-hidden">
                       {isVideo ? (
-                        <video src={url} controls preload="metadata" playsInline className="h-full w-full object-cover" />
+                        <video
+                          src={url}
+                          controls
+                          preload="metadata"
+                          playsInline
+                          muted
+                          crossOrigin="anonymous"
+                          className="h-full w-full object-cover"
+                          onLoadedData={(e) => {
+                            const video = e.currentTarget;
+                            video.currentTime = 0.5;
+                          }}
+                        />
                       ) : (
                         <img src={url} alt={`${property.title} - ${index + 1}`} loading="lazy" className="h-full w-full object-cover" />
                       )}

@@ -50,7 +50,7 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center animate-fade-in">
-          <img src={logo} alt="Domia" className="h-9 sm:h-11" draggable="false" />
+          <img src={logo} alt="Domia" className="h-12 sm:h-14" draggable="false" />
         </Link>
 
         {/* Desktop Nav */}
@@ -154,7 +154,7 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
             <SheetContent side="right" className="w-[280px] sm:w-[320px]">
               <div className="flex flex-col h-full">
                 <div className="flex items-center mb-6">
-                  <img src={logo} alt="Domia" className="h-9" draggable="false" />
+                  <img src={logo} alt="Domia" className="h-12" draggable="false" />
                 </div>
 
                 {isAuthenticated ? (

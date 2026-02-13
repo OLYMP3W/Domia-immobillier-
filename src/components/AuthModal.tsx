@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable/index';
+import { lovable as cloudAuth } from '@/integrations/lovable/index';
 import logo from '@/assets/logo-domia.png';
 
 interface AuthModalProps {
@@ -49,7 +49,7 @@ export const AuthModal = ({ open, onOpenChange, defaultTab = 'login' }: AuthModa
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     setSocialLoading(provider);
     try {
-      const { error } = await lovable.auth.signInWithOAuth(provider, {
+      const { error } = await cloudAuth.auth.signInWithOAuth(provider, {
         redirect_uri: window.location.origin,
       });
       if (error) {
