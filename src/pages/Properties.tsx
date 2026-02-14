@@ -6,9 +6,8 @@ import { MobileNavbar } from '@/components/MobileNavbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { useProperties } from '@/hooks/useProperties';
-import { SlidersHorizontal, Home, Loader2, Search, X, MapPin } from 'lucide-react';
+import { SlidersHorizontal, Loader2, Search, X, MapPin } from 'lucide-react';
 import { AuthModal } from '@/components/AuthModal';
 
 const gabonCities = [
@@ -59,11 +58,19 @@ const Properties = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 backdrop-blur-sm pb-20 md:pb-0">
+    <div className="min-h-screen relative pb-20 md:pb-0">
+      {/* Fond premium Apple-style */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-background" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/3 rounded-full blur-[150px]" />
+      </div>
+
       <Navbar />
 
       {/* Header avec recherche */}
-      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-16 z-30">
+      <div className="border-b border-border/30 bg-card/40 backdrop-blur-xl sticky top-16 z-30">
         <div className="container py-4">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
@@ -72,7 +79,7 @@ const Properties = () => {
                 placeholder="Rechercher une propriété..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 rounded-xl border-border/50 bg-background"
+                className="pl-10 h-11 rounded-xl border-border/50 bg-background/60 backdrop-blur-md"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -99,7 +106,7 @@ const Properties = () => {
           {showFilters && (
             <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 pb-2 animate-fade-in">
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="rounded-xl">
+                <SelectTrigger className="rounded-xl bg-background/60">
                   <SelectValue placeholder="Ville" />
                 </SelectTrigger>
                 <SelectContent>
@@ -111,7 +118,7 @@ const Properties = () => {
               </Select>
 
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="rounded-xl">
+                <SelectTrigger className="rounded-xl bg-background/60">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -126,7 +133,7 @@ const Properties = () => {
               </Select>
 
               <Select value={rooms.toString()} onValueChange={(v) => setRooms(Number(v))}>
-                <SelectTrigger className="rounded-xl">
+                <SelectTrigger className="rounded-xl bg-background/60">
                   <SelectValue placeholder="Pièces" />
                 </SelectTrigger>
                 <SelectContent>
@@ -138,8 +145,8 @@ const Properties = () => {
                 </SelectContent>
               </Select>
 
-              <Input type="number" placeholder="Budget min" value={minBudget} onChange={(e) => setMinBudget(e.target.value)} className="rounded-xl" />
-              <Input type="number" placeholder="Budget max" value={maxBudget} onChange={(e) => setMaxBudget(e.target.value)} className="rounded-xl" />
+              <Input type="number" placeholder="Budget min" value={minBudget} onChange={(e) => setMinBudget(e.target.value)} className="rounded-xl bg-background/60" />
+              <Input type="number" placeholder="Budget max" value={maxBudget} onChange={(e) => setMaxBudget(e.target.value)} className="rounded-xl bg-background/60" />
 
               {activeFiltersCount > 0 && (
                 <Button variant="ghost" size="sm" onClick={resetFilters} className="text-muted-foreground col-span-2 md:col-span-5">
@@ -167,14 +174,14 @@ const Properties = () => {
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
           </div>
         ) : filteredProperties.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProperties.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
           </div>
         ) : (
           <div className="py-20 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 backdrop-blur-md">
               <MapPin className="h-10 w-10 text-muted-foreground/50" />
             </div>
             <h3 className="mb-2 text-xl font-bold">Aucune propriété trouvée</h3>

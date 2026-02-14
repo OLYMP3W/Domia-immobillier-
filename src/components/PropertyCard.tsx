@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Home as HomeIcon, Clock, Play, Bed, Bath } from 'lucide-react';
+import { Heart, MapPin, Home as HomeIcon, Clock, Play, Bed, Bath, Ruler } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -65,7 +65,6 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
             preload="metadata"
             crossOrigin="anonymous"
             onLoadedData={(e) => {
-              // Force poster frame
               const video = e.currentTarget;
               video.currentTime = 0.5;
             }}
@@ -83,7 +82,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
 
   return (
     <Link to={`/property/${property.id}`} className="group block">
-      <div className="overflow-hidden rounded-2xl bg-card/80 backdrop-blur-md border border-border/30 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-hover)] hover:-translate-y-1">
+      <div className="overflow-hidden rounded-2xl bg-card/90 backdrop-blur-xl border border-border/40 shadow-[var(--shadow-card)] transition-all duration-500 hover:shadow-[var(--shadow-hover)] hover:-translate-y-2">
         {/* Image principale */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {mediaCount >= 3 ? (
@@ -138,9 +137,30 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
             <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
           </button>
 
-          {/* Prix overlay en bas */}
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-10">
-            <p className="text-xl font-black text-white">{formatPrice(property.price, property.type)}</p>
+          {/* Avatar propriétaire en overlay - en bas à gauche de l'image */}
+          <Link
+            to={`/profile/${property.owner_id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-3 left-3 z-10 group/owner"
+          >
+            <div className="flex items-center gap-2 rounded-full bg-card/90 backdrop-blur-xl pl-1 pr-3 py-1 shadow-lg border border-border/30 transition-all hover:shadow-[var(--shadow-glow)] hover:scale-105">
+              <Avatar className="h-9 w-9 ring-2 ring-accent shadow-md">
+                <AvatarImage src={property.owner?.avatar_url || ''} />
+                <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
+                  {property.owner?.fullname?.charAt(0) || 'P'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs font-semibold truncate max-w-[100px] group-hover/owner:text-accent transition-colors">
+                {property.owner?.fullname || 'Propriétaire'}
+              </span>
+            </div>
+          </Link>
+
+          {/* Prix overlay en bas à droite */}
+          <div className="absolute bottom-3 right-3">
+            <div className="rounded-xl bg-accent/95 backdrop-blur-md px-3 py-1.5 shadow-lg">
+              <p className="text-sm font-black text-accent-foreground">{formatPrice(property.price, property.type)}</p>
+            </div>
           </div>
         </div>
 
@@ -149,44 +169,32 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
           <h3 className="font-bold text-base line-clamp-1 mb-1.5">{property.title}</h3>
 
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-accent" />
             <span className="truncate">{property.city}{property.neighborhood ? `, ${property.neighborhood}` : ''}</span>
           </div>
 
-          {/* Specs row */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-            <span className="flex items-center gap-1">
-              <Bed className="h-3.5 w-3.5" />
+          {/* Specs row - style pill */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
+            <span className="flex items-center gap-1 bg-muted/80 rounded-full px-2.5 py-1">
+              <Bed className="h-3 w-3 text-accent" />
               {property.rooms} pce{property.rooms > 1 ? 's' : ''}
             </span>
             {property.bathrooms && (
-              <span className="flex items-center gap-1">
-                <Bath className="h-3.5 w-3.5" />
+              <span className="flex items-center gap-1 bg-muted/80 rounded-full px-2.5 py-1">
+                <Bath className="h-3 w-3 text-accent" />
                 {property.bathrooms} sdb
               </span>
             )}
             {property.surface && (
-              <span>{property.surface} m²</span>
+              <span className="flex items-center gap-1 bg-muted/80 rounded-full px-2.5 py-1">
+                <Ruler className="h-3 w-3 text-accent" />
+                {property.surface} m²
+              </span>
             )}
           </div>
 
-          {/* Owner + date */}
-          <div className="flex items-center justify-between border-t border-border/50 pt-3">
-            <Link
-              to={`/profile/${property.owner_id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-2.5 group/owner hover:opacity-80 transition-opacity"
-            >
-              <Avatar className="h-8 w-8 ring-2 ring-accent/30">
-                <AvatarImage src={property.owner?.avatar_url || ''} />
-                <AvatarFallback className="bg-accent text-accent-foreground text-xs font-bold">
-                  {property.owner?.fullname?.charAt(0) || 'P'}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs font-semibold truncate max-w-[120px] group-hover/owner:text-accent transition-colors">
-                {property.owner?.fullname || 'Propriétaire'}
-              </span>
-            </Link>
+          {/* Date */}
+          <div className="flex items-center justify-end">
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
               {formatPropertyDate(property.created_at)}

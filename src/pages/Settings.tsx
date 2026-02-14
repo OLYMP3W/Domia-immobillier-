@@ -12,10 +12,12 @@ import { Navigate, Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, User, Bell, Shield, Save, Home, Camera, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 const Settings = () => {
   const { profile, isAuthenticated, isLoading, user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushNotifications();
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -277,11 +279,24 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Notifications push</p>
-                  <p className="text-sm text-muted-foreground">Recevez des notifications sur votre appareil</p>
+                  <p className="text-sm text-muted-foreground">
+                    {pushSupported
+                      ? pushSubscribed
+                        ? 'Notifications activées sur cet appareil'
+                        : 'Recevez des notifications sur votre appareil'
+                      : 'Non supporté par votre navigateur'}
+                  </p>
                 </div>
                 <Switch
-                  checked={formData.push_notifications}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, push_notifications: checked }))}
+                  checked={pushSubscribed}
+                  disabled={!pushSupported}
+                  onCheckedChange={async (checked) => {
+                    if (checked) {
+                      await subscribePush();
+                    } else {
+                      await unsubscribePush();
+                    }
+                  }}
                 />
               </div>
             </CardContent>
