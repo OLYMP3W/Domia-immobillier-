@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 // Clé VAPID publique générée - à remplacer par votre propre clé
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkOs-qy19yL_biZRulTi6Pr-GbGCWMqjee6JFhQIYI';
+const VAPID_PUBLIC_KEY = 'BLNGIPFo5HRAKcHI5L_aX3PPXKqDyIZYCYZvDfjFOBi0CcvSGzFVXPs0o-_3h-75X8RzHkSN-33uh5s_c5somTM';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);

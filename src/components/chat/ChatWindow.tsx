@@ -6,7 +6,7 @@ import { MessageBubble } from './MessageBubble';
 import { Conversation, Message } from '@/types/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSendMessageToConversation, useMarkConversationAsRead, useDeleteConversation } from '@/hooks/useConversations';
-import { Send, ArrowLeft, Loader2, Trash2, MoreVertical } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Trash2, MoreVertical, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -53,14 +53,12 @@ export const ChatWindow = ({
   const markAsRead = useMarkConversationAsRead();
   const deleteConversation = useDeleteConversation();
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Mark messages as read when conversation is opened
   useEffect(() => {
     if (conversation?.id && conversation.unread_count && conversation.unread_count > 0) {
       markAsRead.mutate(conversation.id);
@@ -103,6 +101,9 @@ export const ChatWindow = ({
     );
   }
 
+  const propertyData = conversation.property;
+  const propertyImage = (propertyData as any)?.primary_image_url || null;
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -128,15 +129,14 @@ export const ChatWindow = ({
             <h3 className="font-medium truncate">
               {conversation.other_participant?.fullname || 'Utilisateur'}
             </h3>
-            {conversation.property && (
-              <p className="text-sm text-primary truncate">
-                {conversation.property.title}
+            {propertyData && (
+              <p className="text-sm text-accent truncate">
+                {propertyData.title}
               </p>
             )}
           </div>
         </Link>
 
-        {/* Menu options */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -154,7 +154,6 @@ export const ChatWindow = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Confirmation suppression */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -184,7 +183,31 @@ export const ChatWindow = ({
         </AlertDialog>
       </div>
 
-      {/* Messages - Custom scrollable container */}
+      {/* Property banner - shows property image and title */}
+      {propertyData && (
+        <Link 
+          to={`/property/${propertyData.id}`}
+          className="flex items-center gap-3 px-4 py-2.5 bg-muted/50 border-b border-border/30 hover:bg-muted/80 transition-colors"
+        >
+          {propertyImage ? (
+            <img src={propertyImage} alt="" className="h-12 w-16 rounded-lg object-cover shrink-0" />
+          ) : (
+            <div className="h-12 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <Home className="h-5 w-5 text-muted-foreground" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold truncate">{propertyData.title}</p>
+            {(propertyData as any)?.price && (
+              <p className="text-xs text-accent font-bold">
+                {Number((propertyData as any).price).toLocaleString('fr-FR')} CFA
+              </p>
+            )}
+          </div>
+        </Link>
+      )}
+
+      {/* Messages */}
       <div 
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto p-4"
@@ -214,7 +237,6 @@ export const ChatWindow = ({
                 />
               );
             })}
-            {/* Invisible element to scroll to */}
             <div ref={messagesEndRef} />
           </div>
         )}

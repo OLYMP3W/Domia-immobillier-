@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, Home as HomeIcon, Clock, Play, Bed, Bath, Ruler } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Property } from '@/types/database';
 import { useToggleFavorite, useIsFavorite } from '@/hooks/useFavorites';
@@ -64,10 +62,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
             playsInline
             preload="metadata"
             crossOrigin="anonymous"
-            onLoadedData={(e) => {
-              const video = e.currentTarget;
-              video.currentTime = 0.5;
-            }}
+            onLoadedData={(e) => { e.currentTarget.currentTime = 0.5; }}
           />
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
             <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
@@ -83,7 +78,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
   return (
     <Link to={`/property/${property.id}`} className="group block">
       <div className="overflow-hidden rounded-2xl bg-card/90 backdrop-blur-xl border border-border/40 shadow-[var(--shadow-card)] transition-all duration-500 hover:shadow-[var(--shadow-hover)] hover:-translate-y-2">
-        {/* Image principale */}
+        {/* Media section */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {mediaCount >= 3 ? (
             <div className="grid h-full grid-rows-2 gap-[2px]">
@@ -116,7 +111,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
             </div>
           )}
 
-          {/* Badges overlay */}
+          {/* Badges overlay - top left */}
           <div className="absolute top-3 left-3 flex gap-2">
             {property.is_premium && (
               <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground shadow-md">
@@ -128,7 +123,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
             </span>
           </div>
 
-          {/* Favoris */}
+          {/* Favoris - top right */}
           <button
             onClick={handleToggleFavorite}
             disabled={toggleFavorite.isPending}
@@ -136,36 +131,32 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
           >
             <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
           </button>
+        </div>
 
-          {/* Avatar propriétaire en overlay - en bas à gauche de l'image */}
-          <Link
-            to={`/profile/${property.owner_id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-3 left-3 z-10 group/owner"
-          >
-            <div className="flex items-center gap-2 rounded-full bg-card/90 backdrop-blur-xl pl-1 pr-3 py-1 shadow-lg border border-border/30 transition-all hover:shadow-[var(--shadow-glow)] hover:scale-105">
-              <Avatar className="h-9 w-9 ring-2 ring-accent shadow-md">
+        {/* Content section */}
+        <div className="p-4">
+          {/* Owner + Price row */}
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <Link
+              to={`/profile/${property.owner_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2 min-w-0 shrink group/owner"
+            >
+              <Avatar className="h-8 w-8 ring-2 ring-accent shadow-sm shrink-0">
                 <AvatarImage src={property.owner?.avatar_url || ''} />
-                <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
+                <AvatarFallback className="bg-accent text-accent-foreground text-xs font-bold">
                   {property.owner?.fullname?.charAt(0) || 'P'}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-xs font-semibold truncate max-w-[100px] group-hover/owner:text-accent transition-colors">
+              <span className="text-xs font-semibold truncate group-hover/owner:text-accent transition-colors">
                 {property.owner?.fullname || 'Propriétaire'}
               </span>
-            </div>
-          </Link>
-
-          {/* Prix overlay en bas à droite */}
-          <div className="absolute bottom-3 right-3">
-            <div className="rounded-xl bg-accent/95 backdrop-blur-md px-3 py-1.5 shadow-lg">
-              <p className="text-sm font-black text-accent-foreground">{formatPrice(property.price, property.type)}</p>
+            </Link>
+            <div className="rounded-xl bg-accent/95 px-3 py-1.5 shadow-sm shrink-0">
+              <p className="text-xs sm:text-sm font-black text-accent-foreground whitespace-nowrap">{formatPrice(property.price, property.type)}</p>
             </div>
           </div>
-        </div>
 
-        {/* Contenu */}
-        <div className="p-4">
           <h3 className="font-bold text-base line-clamp-1 mb-1.5">{property.title}</h3>
 
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
@@ -173,7 +164,7 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
             <span className="truncate">{property.city}{property.neighborhood ? `, ${property.neighborhood}` : ''}</span>
           </div>
 
-          {/* Specs row - style pill */}
+          {/* Specs pills */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
             <span className="flex items-center gap-1 bg-muted/80 rounded-full px-2.5 py-1">
               <Bed className="h-3 w-3 text-accent" />
