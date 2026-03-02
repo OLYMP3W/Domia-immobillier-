@@ -55,7 +55,7 @@ const PropertyDetail = () => {
   };
 
   const handleWhatsApp = () => {
-    const whatsapp = (property?.owner as any)?.whatsapp || property?.owner?.phone;
+    const whatsapp = property?.owner?.whatsapp;
     if (!whatsapp) return;
     const cleanNumber = whatsapp.replace(/[^0-9+]/g, '').replace('+', '');
     const message = encodeURIComponent(`Bonjour, je suis intéressé(e) par votre annonce "${property?.title}" sur Domia.`);
@@ -89,7 +89,7 @@ const PropertyDetail = () => {
   }
 
   const images = property.images?.map(img => img.url) || [];
-  const ownerWhatsapp = (property.owner as any)?.whatsapp || property.owner?.phone;
+  const ownerWhatsapp = property.owner?.whatsapp;
 
   return (
     <div className="min-h-screen bg-background">

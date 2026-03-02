@@ -80,7 +80,28 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
       <div className="overflow-hidden rounded-2xl bg-card/90 backdrop-blur-xl border border-border/40 shadow-[var(--shadow-card)] transition-all duration-500 hover:shadow-[var(--shadow-hover)] hover:-translate-y-2">
         {/* Media section */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-          {mediaCount >= 3 ? (
+          {mediaCount === 2 ? (
+            <div className="grid h-full grid-cols-2 gap-[2px]">
+              {allMedia.slice(0, 2).map((media, i) => (
+                <div key={i} className="relative overflow-hidden">{renderMedia(media)}</div>
+              ))}
+            </div>
+          ) : mediaCount === 3 ? (
+            <div className="grid h-full grid-cols-2 gap-[2px]">
+              <div className="relative overflow-hidden">{renderMedia(allMedia[0])}</div>
+              <div className="grid grid-rows-2 gap-[2px]">
+                {allMedia.slice(1, 3).map((media, i) => (
+                  <div key={i} className="relative overflow-hidden">{renderMedia(media)}</div>
+                ))}
+              </div>
+            </div>
+          ) : mediaCount === 4 ? (
+            <div className="grid h-full grid-cols-2 grid-rows-2 gap-[2px]">
+              {allMedia.slice(0, 4).map((media, i) => (
+                <div key={i} className="relative overflow-hidden">{renderMedia(media)}</div>
+              ))}
+            </div>
+          ) : mediaCount >= 5 ? (
             <div className="grid h-full grid-rows-2 gap-[2px]">
               <div className="grid grid-cols-2 gap-[2px]">
                 {allMedia.slice(0, 2).map((media, i) => (
@@ -97,9 +118,6 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
                       </div>
                     )}
                   </div>
-                ))}
-                {allMedia.length < 5 && Array.from({ length: Math.max(0, 3 - (allMedia.length - 2)) }).map((_, i) => (
-                  <div key={`e-${i}`} className="bg-muted" />
                 ))}
               </div>
             </div>
