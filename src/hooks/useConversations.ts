@@ -41,7 +41,7 @@ export const useConversations = () => {
         .from('conversations')
         .select(`
           *,
-          property:properties(id, title)
+          property:properties(id, title, price, type)
         `)
         .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
@@ -77,6 +77,29 @@ export const useConversations = () => {
             .eq('receiver_id', user.id)
             .eq('is_read', false);
 
+          // Get property primary image if property exists
+          let primaryImageUrl: string | null = null;
+          if (conv.property_id) {
+            const { data: images } = await supabase
+              .from('property_media')
+              .select('url')
+              .eq('property_id', conv.property_id)
+              .eq('is_primary', true)
+              .limit(1);
+            
+            if (images && images.length > 0) {
+              primaryImageUrl = images[0].url;
+            } else {
+              // Fallback to first image
+              const { data: fallbackImages } = await supabase
+                .from('property_media')
+                .select('url')
+                .eq('property_id', conv.property_id)
+                .limit(1);
+              primaryImageUrl = fallbackImages?.[0]?.url || null;
+            }
+          }
+
           const otherId = conv.participant_1 === user.id ? conv.participant_2 : conv.participant_1;
 
           return {
@@ -84,11 +107,12 @@ export const useConversations = () => {
             other_participant: profileMap.get(otherId) || null,
             last_message: messages?.[0] || null,
             unread_count: unreadCount || 0,
+            property: conv.property ? { ...conv.property, primary_image_url: primaryImageUrl } : null,
           };
         })
       );
 
-      return conversationsWithDetails as Conversation[];
+      return conversationsWithDetails as unknown as Conversation[];
     },
     enabled: !!user,
   });
