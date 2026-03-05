@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
 import { MobileNavbar } from '@/components/MobileNavbar';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
@@ -43,41 +42,42 @@ const Messages = () => {
   if (!isAuthenticated) { navigate('/'); return null; }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-background">
+      {!isMobile && <Navbar />}
 
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="rounded-2xl border border-border/50 bg-card overflow-hidden h-[calc(100vh-200px)] min-h-[500px] shadow-sm">
-          {isMobile ? (
-            showChat && selectedConversation ? (
-              <ChatWindow conversation={selectedConversation} messages={messages} isLoading={messagesLoading} onBack={() => { setShowChat(false); setSelectedConversation(null); }} showBackButton />
+      <main className="flex-1 flex flex-col">
+        <div className={`flex-1 ${isMobile ? 'h-screen' : 'container mx-auto px-4 py-6'}`}>
+          <div className={`bg-card overflow-hidden ${isMobile ? 'h-full' : 'rounded-2xl border border-border/50 h-[calc(100vh-200px)] min-h-[500px] shadow-sm'}`}>
+            {isMobile ? (
+              showChat && selectedConversation ? (
+                <ChatWindow conversation={selectedConversation} messages={messages} isLoading={messagesLoading} onBack={() => { setShowChat(false); setSelectedConversation(null); }} showBackButton />
+              ) : (
+                <div className="h-full flex flex-col">
+                  <div className="p-5 border-b border-border/50 bg-card/95 backdrop-blur-lg">
+                    <h1 className="text-xl font-bold flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-accent" /> Messages
+                    </h1>
+                  </div>
+                  <ConversationList conversations={conversations} selectedId={selectedConversation?.id || null} onSelect={(c) => { setSelectedConversation(c); setShowChat(true); }} isLoading={conversationsLoading} />
+                </div>
+              )
             ) : (
-              <div className="h-full flex flex-col">
-                <div className="p-5 border-b border-border/50">
-                  <h1 className="text-xl font-bold flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-accent" /> Messages
-                  </h1>
+              <div className="flex h-full">
+                <div className="w-80 border-r border-border/50 flex flex-col">
+                  <div className="p-5 border-b border-border/50">
+                    <h1 className="text-xl font-bold flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-accent" /> Messages
+                    </h1>
+                  </div>
+                  <div className="flex-1"><ConversationList conversations={conversations} selectedId={selectedConversation?.id || null} onSelect={(c) => { setSelectedConversation(c); setShowChat(true); }} isLoading={conversationsLoading} /></div>
                 </div>
-                <ConversationList conversations={conversations} selectedId={selectedConversation?.id || null} onSelect={(c) => { setSelectedConversation(c); setShowChat(true); }} isLoading={conversationsLoading} />
+                <div className="flex-1"><ChatWindow conversation={selectedConversation} messages={messages} isLoading={messagesLoading} /></div>
               </div>
-            )
-          ) : (
-            <div className="flex h-full">
-              <div className="w-80 border-r border-border/50 flex flex-col">
-                <div className="p-5 border-b border-border/50">
-                  <h1 className="text-xl font-bold flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-accent" /> Messages
-                  </h1>
-                </div>
-                <div className="flex-1"><ConversationList conversations={conversations} selectedId={selectedConversation?.id || null} onSelect={(c) => { setSelectedConversation(c); setShowChat(true); }} isLoading={conversationsLoading} /></div>
-              </div>
-              <div className="flex-1"><ChatWindow conversation={selectedConversation} messages={messages} isLoading={messagesLoading} /></div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
 
-      <Footer />
       <MobileNavbar onOpenAuth={() => setAuthModalOpen(true)} />
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
