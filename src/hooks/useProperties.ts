@@ -149,12 +149,9 @@ export const useProperty = (id: string) => {
         .eq('user_id', data.owner_id)
         .single();
 
-      // Fetch owner private profile for phone and whatsapp (only visible if RLS allows - authenticated users)
-      const { data: ownerPrivateProfile } = await supabase
-        .from('profiles')
-        .select('phone, whatsapp')
-        .eq('user_id', data.owner_id)
-        .maybeSingle();
+      // Fetch owner contact info via security definer function (accessible to everyone)
+      const { data: ownerContact } = await supabase
+        .rpc('get_owner_contact', { owner_user_id: data.owner_id }) as { data: { phone: string | null; whatsapp: string | null } | null };
       
       // Increment views
       await supabase.rpc('increment_property_views', { property_id: id });
@@ -186,8 +183,8 @@ export const useProperty = (id: string) => {
           fullname: ownerPublicProfile.fullname,
           email: '',
           avatar_url: ownerPublicProfile.avatar_url,
-          phone: ownerPrivateProfile?.phone || null,
-          whatsapp: ownerPrivateProfile?.whatsapp || null,
+          phone: ownerContact?.phone || null,
+          whatsapp: ownerContact?.whatsapp || null,
           created_at: '',
           updated_at: '',
         } : null,

@@ -20,6 +20,8 @@ import Notifications from "./pages/Notifications";
 import Install from "./pages/Install";
 import PublicProfile from "./pages/PublicProfile";
 import AdminDashboard from "./pages/AdminDashboard";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -55,6 +57,8 @@ const App = () => (
               <Route path="/install" element={<Install />} />
               <Route path="/profile/:userId" element={<PublicProfile />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <PWAInstallBanner />
