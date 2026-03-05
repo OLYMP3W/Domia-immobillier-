@@ -55,6 +55,12 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/properties">Explorer</Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/blog">Blog</Link>
+          </Button>
           {showDownloadButton && (
             <Button variant="ghost" size="sm" asChild>
               <Link to="/install">
