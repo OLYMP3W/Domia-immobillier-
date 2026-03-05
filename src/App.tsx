@@ -57,6 +57,8 @@ const App = () => (
               <Route path="/install" element={<Install />} />
               <Route path="/profile/:userId" element={<PublicProfile />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <PWAInstallBanner />

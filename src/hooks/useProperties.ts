@@ -151,7 +151,7 @@ export const useProperty = (id: string) => {
 
       // Fetch owner contact info via security definer function (accessible to everyone)
       const { data: ownerContact } = await supabase
-        .rpc('get_owner_contact', { owner_user_id: data.owner_id });
+        .rpc('get_owner_contact', { owner_user_id: data.owner_id }) as { data: { phone: string | null; whatsapp: string | null } | null };
       
       // Increment views
       await supabase.rpc('increment_property_views', { property_id: id });
