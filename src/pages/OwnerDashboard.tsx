@@ -2,7 +2,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNavbar } from '@/components/MobileNavbar';
 import { Button } from '@/components/ui/button';
-import { Plus, Home, Eye, MessageSquare, Bell, Loader2, Settings, Trash2, TrendingUp, DollarSign, Pencil, BarChart3 } from 'lucide-react';
+import { Plus, Home, Eye, MessageSquare, Bell, Loader2, Settings, Trash2, Pencil, BarChart3, BookOpen, Heart, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
@@ -14,6 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import { AuthModal } from '@/components/AuthModal';
 import { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
+const NewBadge = () => (
+  <span className="ml-1.5 inline-flex items-center rounded-full bg-green-500 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider animate-pulse">
+    New
+  </span>
+);
 
 const OwnerDashboard = () => {
   const { profile, role, isAuthenticated, isLoading } = useAuth();
@@ -92,17 +98,21 @@ const OwnerDashboard = () => {
         {/* Quick Actions */}
         <div className="flex gap-3 overflow-x-auto pb-2 mb-10 scrollbar-hide">
           {[
-            { label: 'Messages', icon: MessageSquare, href: '/messages', badge: unreadMessages },
-            { label: 'Notifications', icon: Bell, href: '/notifications', badge: unreadNotifications },
+            { label: 'Messages', icon: MessageSquare, href: '/messages', badge: unreadMessages > 0 ? unreadMessages : undefined },
+            { label: 'Notifications', icon: Bell, href: '/notifications', badge: unreadNotifications > 0 ? unreadNotifications : undefined },
+            { label: 'Blog', icon: BookOpen, href: '/blog', isNew: true },
+            { label: 'Favoris', icon: Heart, href: '/properties' },
             { label: 'Paramètres', icon: Settings, href: '/settings' },
-            { label: 'Statistiques', icon: BarChart3, href: '#' },
           ].map((action) => {
             const Icon = action.icon;
             return (
               <Button key={action.label} variant="outline" className="h-auto py-3 px-5 rounded-xl flex-col gap-1.5 relative shrink-0" asChild>
                 <Link to={action.href}>
                   <Icon className="h-5 w-5" />
-                  <span className="text-xs">{action.label}</span>
+                  <span className="text-xs flex items-center">
+                    {action.label}
+                    {action.isNew && <NewBadge />}
+                  </span>
                   {action.badge && action.badge > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
                       {action.badge}

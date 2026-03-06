@@ -14,6 +14,7 @@ import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import { useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { AuthModal } from '@/components/AuthModal';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { formatPropertyDate } from '@/lib/dateUtils';
@@ -28,11 +29,19 @@ const PropertyDetail = () => {
   const toggleFavorite = useToggleFavorite();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageContent, setMessageContent] = useState('');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const sendMessage = useSendMessage();
 
+  const requireAuth = (action: () => void) => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+      return;
+    }
+    action();
+  };
+
   const handleToggleFavorite = () => {
-    if (!isAuthenticated) { toast({ title: 'Connexion requise', variant: 'destructive' }); return; }
-    if (id) toggleFavorite.mutate(id);
+    requireAuth(() => { if (id) toggleFavorite.mutate(id); });
   };
 
   const handleSendMessage = async () => {
@@ -55,11 +64,21 @@ const PropertyDetail = () => {
   };
 
   const handleWhatsApp = () => {
-    const whatsapp = property?.owner?.whatsapp;
-    if (!whatsapp) return;
-    const cleanNumber = whatsapp.replace(/[^0-9+]/g, '').replace('+', '');
-    const message = encodeURIComponent(`Bonjour, je suis intéressé(e) par votre annonce "${property?.title}" sur Domia.`);
-    window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
+    requireAuth(() => {
+      const whatsapp = property?.owner?.whatsapp;
+      if (!whatsapp) return;
+      const cleanNumber = whatsapp.replace(/[^0-9+]/g, '').replace('+', '');
+      const message = encodeURIComponent(`Bonjour, je suis intéressé(e) par votre annonce "${property?.title}" sur Domia.`);
+      window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
+    });
+  };
+
+  const handleCall = () => {
+    requireAuth(() => {
+      if (property?.owner?.phone) {
+        window.open(`tel:${property.owner.phone}`, '_self');
+      }
+    });
   };
 
   if (isLoading) {
@@ -90,6 +109,17 @@ const PropertyDetail = () => {
 
   const images = property.images?.map(img => img.url) || [];
   const ownerWhatsapp = property.owner?.whatsapp;
+  const isLand = property.type === 'sale' && (property.title?.toLowerCase().includes('terrain') || property.description?.toLowerCase().includes('terrain'));
+
+  // Build specs based on property type
+  const specs = [
+    ...(!isLand ? [
+      { icon: Home, label: 'Pièces', value: property.rooms },
+      { icon: BedDouble, label: 'Chambres', value: Math.max(1, property.rooms - 1) },
+      { icon: Bath, label: 'Salle(s) de bain', value: property.bathrooms || 1 },
+    ] : []),
+    { icon: Maximize, label: 'm²', value: property.surface || '-' },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -114,10 +144,7 @@ const PropertyDetail = () => {
                           muted
                           crossOrigin="anonymous"
                           className="h-full w-full object-cover"
-                          onLoadedData={(e) => {
-                            const video = e.currentTarget;
-                            video.currentTime = 0.5;
-                          }}
+                          onLoadedData={(e) => { e.currentTarget.currentTime = 0.5; }}
                         />
                       ) : (
                         <img src={url} alt={`${property.title} - ${index + 1}`} loading="lazy" className="h-full w-full object-cover" />
@@ -140,12 +167,10 @@ const PropertyDetail = () => {
           </div>
         )}
 
-        {/* Back button overlay */}
         <Button variant="secondary" size="icon" className="absolute top-4 left-4 rounded-full shadow-lg backdrop-blur-md bg-card/80" onClick={() => navigate(-1)}>
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
-        {/* Actions overlay */}
         <div className="absolute top-4 right-4 flex gap-2">
           <Button size="icon" variant="secondary" className="rounded-full shadow-lg backdrop-blur-md bg-card/80" onClick={handleToggleFavorite}>
             <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
@@ -158,15 +183,14 @@ const PropertyDetail = () => {
 
       <div className="container py-6 md:py-10">
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Contenu principal */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Titre et prix */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 {property.is_premium && <Badge className="gradient-gold border-0">Premium</Badge>}
                 <Badge variant="outline">
                   {property.type === 'rent' ? 'Location' : property.type === 'sale' ? 'Vente' : property.type}
                 </Badge>
+                {isLand && <Badge variant="outline">🏗️ Terrain</Badge>}
               </div>
               <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-3">{property.title}</h1>
               <div className="flex items-center text-muted-foreground mb-4">
@@ -179,14 +203,9 @@ const PropertyDetail = () => {
               </p>
             </div>
 
-            {/* Specs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { icon: Home, label: 'Pièces', value: property.rooms },
-                { icon: BedDouble, label: 'Chambres', value: Math.max(1, property.rooms - 1) },
-                { icon: Bath, label: 'Salle(s) de bain', value: property.bathrooms || 1 },
-                { icon: Maximize, label: 'm²', value: property.surface || '-' },
-              ].map((spec) => (
+            {/* Specs - adapts for land */}
+            <div className={`grid gap-3 ${isLand ? 'grid-cols-1 sm:grid-cols-1 max-w-xs' : 'grid-cols-2 sm:grid-cols-4'}`}>
+              {specs.map((spec) => (
                 <div key={spec.label} className="rounded-2xl border border-border/50 bg-card p-4 text-center">
                   <spec.icon className="h-5 w-5 mx-auto mb-2 text-accent" />
                   <div className="text-xl font-bold">{spec.value}</div>
@@ -195,7 +214,6 @@ const PropertyDetail = () => {
               ))}
             </div>
 
-            {/* Description */}
             <div className="rounded-2xl border border-border/50 bg-card p-6">
               <h2 className="text-xl font-bold mb-4">Description</h2>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
@@ -204,7 +222,7 @@ const PropertyDetail = () => {
             </div>
           </div>
 
-          {/* Sidebar propriétaire */}
+          {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="rounded-2xl border border-border/50 bg-card p-6 lg:sticky lg:top-24 space-y-6">
               <h3 className="text-lg font-bold">Propriétaire</h3>
@@ -225,10 +243,7 @@ const PropertyDetail = () => {
               <Separator />
 
               <div className="space-y-3">
-                <Button className="w-full gradient-gold rounded-xl h-11" onClick={() => {
-                  if (!isAuthenticated) { toast({ title: 'Connexion requise', variant: 'destructive' }); return; }
-                  setMessageDialogOpen(true);
-                }}>
+                <Button className="w-full gradient-gold rounded-xl h-11" onClick={() => requireAuth(() => setMessageDialogOpen(true))}>
                   <Mail className="mr-2 h-4 w-4" /> Envoyer un message
                 </Button>
                 {ownerWhatsapp && (
@@ -237,8 +252,8 @@ const PropertyDetail = () => {
                   </Button>
                 )}
                 {property.owner?.phone && (
-                  <Button variant="outline" className="w-full rounded-xl h-11" asChild>
-                    <a href={`tel:${property.owner.phone}`}><Phone className="mr-2 h-4 w-4" /> Appeler</a>
+                  <Button variant="outline" className="w-full rounded-xl h-11" onClick={handleCall}>
+                    <Phone className="mr-2 h-4 w-4" /> Appeler
                   </Button>
                 )}
               </div>
@@ -286,6 +301,9 @@ const PropertyDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Auth Modal */}
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
 
       <Footer />
     </div>
