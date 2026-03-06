@@ -1,10 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Plus, MessageSquare, User, Bell } from 'lucide-react';
+import { Home, Search, Plus, MessageSquare, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadMessagesCount } from '@/hooks/useMessages';
-import { useNotifications } from '@/hooks/useNotifications';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface MobileNavbarProps {
@@ -15,9 +13,7 @@ export const MobileNavbar = ({ onOpenAuth }: MobileNavbarProps) => {
   const { isAuthenticated, role } = useAuth();
   const location = useLocation();
   const { data: unreadMessages = 0 } = useUnreadMessagesCount();
-  const { data: notifications = [] } = useNotifications();
   const { isInstalled } = usePWAInstall();
-  const unreadNotifs = notifications.filter((n: any) => !n.is_read).length;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -31,7 +27,7 @@ export const MobileNavbar = ({ onOpenAuth }: MobileNavbarProps) => {
     }] : []),
     {
       href: '/messages', label: 'Messages', icon: MessageSquare,
-      badge: unreadMessages, requireAuth: true,
+      badge: unreadMessages > 0 ? unreadMessages : undefined, requireAuth: true,
     },
     {
       href: isAuthenticated
@@ -52,7 +48,7 @@ export const MobileNavbar = ({ onOpenAuth }: MobileNavbarProps) => {
           if (item.isCenter) {
             return (
               <Link key={item.href} to={item.href} className="flex flex-col items-center justify-center -mt-7">
-                <div className="w-[52px] h-[52px] rounded-2xl gradient-gold flex items-center justify-center shadow-lg shadow-accent/30 rotate-0 transition-transform active:scale-95">
+                <div className="w-[52px] h-[52px] rounded-2xl gradient-gold flex items-center justify-center shadow-lg shadow-accent/30 transition-transform active:scale-95">
                   <Icon className="h-6 w-6 text-accent-foreground" />
                 </div>
                 <span className="text-[9px] font-semibold mt-1 text-accent">Publier</span>
