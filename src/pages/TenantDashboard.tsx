@@ -2,7 +2,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNavbar } from '@/components/MobileNavbar';
 import { Button } from '@/components/ui/button';
-import { Heart, Search, Bell, MessageSquare, Loader2, Home, TrendingUp, MapPin, Eye } from 'lucide-react';
+import { Heart, Search, Bell, MessageSquare, Loader2, Home, TrendingUp, MapPin, Eye, BookOpen, Settings, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
@@ -12,6 +12,12 @@ import { useSavedSearches } from '@/hooks/useSavedSearches';
 import { useTenantStats } from '@/hooks/useStats';
 import { AuthModal } from '@/components/AuthModal';
 import { useState } from 'react';
+
+const NewBadge = () => (
+  <span className="ml-1.5 inline-flex items-center rounded-full bg-green-500 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider animate-pulse">
+    New
+  </span>
+);
 
 const TenantDashboard = () => {
   const { profile, role, isAuthenticated, isLoading } = useAuth();
@@ -63,6 +69,29 @@ const TenantDashboard = () => {
               </div>
             );
             return stat.href.startsWith('#') ? <a key={stat.label} href={stat.href}>{inner}</a> : <Link key={stat.label} to={stat.href}>{inner}</Link>;
+          })}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex gap-3 overflow-x-auto pb-2 mb-10 scrollbar-hide">
+          {[
+            { label: 'Blog', icon: BookOpen, href: '/blog', isNew: true },
+            { label: 'Messages', icon: MessageSquare, href: '/messages' },
+            { label: 'Notifications', icon: Bell, href: '/notifications' },
+            { label: 'Paramètres', icon: Settings, href: '/settings' },
+          ].map((action) => {
+            const Icon = action.icon;
+            return (
+              <Button key={action.label} variant="outline" className="h-auto py-3 px-5 rounded-xl flex-col gap-1.5 relative shrink-0" asChild>
+                <Link to={action.href}>
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs flex items-center">
+                    {action.label}
+                    {action.isNew && <NewBadge />}
+                  </span>
+                </Link>
+              </Button>
+            );
           })}
         </div>
 
