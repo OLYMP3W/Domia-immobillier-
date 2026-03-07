@@ -97,9 +97,8 @@ export const ChatWindow = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
-    // Auto-resize textarea
     e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+    e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
   };
 
   if (!conversation) {
@@ -133,8 +132,9 @@ export const ChatWindow = ({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header - iMessage style */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/30 bg-card/95 backdrop-blur-xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/30 bg-card/95 backdrop-blur-xl shrink-0"
+           style={{ paddingTop: showBackButton ? 'max(env(safe-area-inset-top, 8px), 8px)' : '10px' }}>
         {showBackButton && (
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full -ml-1" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
@@ -146,28 +146,27 @@ export const ChatWindow = ({
           className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
         >
           <div className="relative">
-            <Avatar className="h-10 w-10 ring-2 ring-primary/10">
+            <Avatar className="h-9 w-9 ring-2 ring-primary/10">
               <AvatarImage src={conversation.other_participant?.avatar_url || ''} />
               <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                 {conversation.other_participant?.fullname?.charAt(0).toUpperCase() || '?'}
               </AvatarFallback>
             </Avatar>
-            {/* Online indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-card" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-card" />
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-[15px] truncate">
+            <h3 className="font-semibold text-[15px] truncate leading-tight">
               {conversation.other_participant?.fullname || 'Utilisateur'}
             </h3>
-            <p className="text-xs text-muted-foreground">En ligne</p>
+            <p className="text-[11px] text-green-600 font-medium">En ligne</p>
           </div>
         </Link>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-              <MoreVertical className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded-xl">
@@ -186,7 +185,7 @@ export const ChatWindow = ({
             <AlertDialogHeader>
               <AlertDialogTitle>Supprimer cette discussion ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Les messages de cette conversation seront supprimés. Cette action est irréversible.
+                Les messages seront supprimés. Cette action est irréversible.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -214,12 +213,12 @@ export const ChatWindow = ({
       {propertyData && (
         <Link 
           to={`/property/${propertyData.id}`}
-          className="flex items-center gap-3 px-4 py-2 bg-accent/5 border-b border-border/20 hover:bg-accent/10 transition-colors"
+          className="flex items-center gap-3 px-4 py-2 bg-accent/5 border-b border-border/20 hover:bg-accent/10 transition-colors shrink-0"
         >
           {propertyImage ? (
-            <img src={propertyImage} alt="" className="h-10 w-14 rounded-lg object-cover shrink-0 shadow-sm" />
+            <img src={propertyImage} alt="" className="h-9 w-12 rounded-lg object-cover shrink-0" />
           ) : (
-            <div className="h-10 w-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <div className="h-9 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
               <Home className="h-4 w-4 text-muted-foreground" />
             </div>
           )}
@@ -231,18 +230,14 @@ export const ChatWindow = ({
               </p>
             )}
           </div>
-          <span className="text-xs text-muted-foreground shrink-0">Voir →</span>
+          <span className="text-[11px] text-muted-foreground shrink-0">Voir →</span>
         </Link>
       )}
 
-      {/* Messages area */}
+      {/* Messages area - fills remaining space */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-3"
-        style={{ 
-          backgroundImage: 'radial-gradient(circle at 50% 50%, hsl(var(--muted)/0.3) 1px, transparent 1px)',
-          backgroundSize: '24px 24px'
-        }}
+        className="flex-1 overflow-y-auto px-3 py-2 min-h-0"
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
@@ -250,20 +245,20 @@ export const ChatWindow = ({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-            <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
-              <Smile className="h-7 w-7 text-accent" />
+            <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+              <Smile className="h-6 w-6 text-accent" />
             </div>
             <div className="text-center">
-              <p className="font-medium text-foreground">Démarrer la conversation</p>
-              <p className="text-sm mt-1">Envoyez le premier message !</p>
+              <p className="font-medium text-foreground text-sm">Démarrer la conversation</p>
+              <p className="text-xs mt-1">Envoyez le premier message !</p>
             </div>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {groupedMessages.map((group) => (
               <div key={group.date}>
-                <div className="flex justify-center my-4">
-                  <span className="text-[11px] text-muted-foreground bg-muted/80 backdrop-blur-sm px-3 py-1 rounded-full font-medium">
+                <div className="flex justify-center my-3">
+                  <span className="text-[10px] text-muted-foreground bg-muted/80 backdrop-blur-sm px-2.5 py-0.5 rounded-full font-medium">
                     {group.date}
                   </span>
                 </div>
@@ -288,10 +283,11 @@ export const ChatWindow = ({
         )}
       </div>
 
-      {/* Input - iMessage style */}
-      <div className="px-3 py-2 border-t border-border/30 bg-card/95 backdrop-blur-xl">
-        <div className="flex items-end gap-2">
-          <div className="flex-1 relative">
+      {/* Input bar - stuck to bottom */}
+      <div className="shrink-0 px-2 py-1.5 border-t border-border/20 bg-card/98 backdrop-blur-xl"
+           style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 6px), 6px)' }}>
+        <div className="flex items-end gap-1.5">
+          <div className="flex-1">
             <textarea
               ref={inputRef}
               value={newMessage}
@@ -299,19 +295,19 @@ export const ChatWindow = ({
               onKeyDown={handleKeyDown}
               placeholder="Message..."
               rows={1}
-              className="w-full resize-none rounded-2xl border border-border/50 bg-muted/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 placeholder:text-muted-foreground/60 max-h-[120px]"
+              className="w-full resize-none rounded-2xl border border-border/40 bg-muted/40 px-3.5 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground/50 max-h-[100px]"
               disabled={sendMessage.isPending}
-              style={{ minHeight: '40px' }}
+              style={{ minHeight: '36px' }}
             />
           </div>
           <Button
             onClick={handleSend}
             disabled={!newMessage.trim() || sendMessage.isPending}
             size="icon"
-            className={`h-10 w-10 rounded-full shrink-0 transition-all ${
+            className={`h-9 w-9 rounded-full shrink-0 mb-0.5 transition-all ${
               newMessage.trim() 
-                ? 'gradient-gold shadow-lg shadow-accent/20 scale-100' 
-                : 'bg-muted text-muted-foreground scale-95'
+                ? 'bg-accent text-accent-foreground shadow-md' 
+                : 'bg-muted text-muted-foreground'
             }`}
           >
             {sendMessage.isPending ? (

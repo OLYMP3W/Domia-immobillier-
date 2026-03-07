@@ -1,4 +1,3 @@
-// Edge function to send real Web Push notifications
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -35,8 +34,6 @@ async function createVapidAuthHeader(
   const url = new URL(endpoint);
   const audience = `${url.protocol}//${url.host}`;
 
-  // Import private key
-  const privateKeyBytes = base64UrlToUint8Array(vapidPrivateKey);
   const publicKeyBytes = base64UrlToUint8Array(vapidPublicKey);
 
   const jwk = {
@@ -55,7 +52,6 @@ async function createVapidAuthHeader(
     ["sign"]
   );
 
-  // Create JWT
   const header = { typ: "JWT", alg: "ES256" };
   const now = Math.floor(Date.now() / 1000);
   const payload = {
@@ -75,7 +71,6 @@ async function createVapidAuthHeader(
     encoder.encode(unsignedToken)
   );
 
-  // Convert DER signature to raw r||s format
   const sigBytes = new Uint8Array(signature);
   const token = `${unsignedToken}.${uint8ArrayToBase64Url(sigBytes)}`;
 
@@ -92,16 +87,14 @@ async function sendWebPush(
   vapidPrivateKey: string,
   subject: string
 ): Promise<Response> {
-  // For now, send unencrypted (many push services accept this)
-  // Full encryption requires implementing RFC 8291 which is complex
-  const { authorization, cryptoKey } = await createVapidAuthHeader(
+  const { authorization } = await createVapidAuthHeader(
     subscription.endpoint,
     vapidPublicKey,
     vapidPrivateKey,
     subject
   );
 
-  const response = await fetch(subscription.endpoint, {
+  return await fetch(subscription.endpoint, {
     method: "POST",
     headers: {
       "Authorization": authorization,
@@ -111,8 +104,6 @@ async function sendWebPush(
     },
     body: payload,
   });
-
-  return response;
 }
 
 Deno.serve(async (req) => {
@@ -130,28 +121,29 @@ Deno.serve(async (req) => {
 
     if (!vapidPrivateKey || !vapidPublicKey) {
       return new Response(
-        JSON.stringify({ 
-          error: "VAPID keys not configured. Run generate-vapid-keys first.",
-          needs_setup: true 
-        }),
+        JSON.stringify({ error: "VAPID keys not configured", needs_setup: true }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const { user_id, title, body, url, tag } = await req.json();
+    const body = await req.json();
+    const { user_id, user_ids, title, body: msgBody, url, tag } = body;
 
-    if (!user_id || !title) {
+    // Support single user_id or array of user_ids for broadcast
+    const targetUserIds: string[] = user_ids || (user_id ? [user_id] : []);
+
+    if (targetUserIds.length === 0 || !title) {
       return new Response(
-        JSON.stringify({ error: "user_id et title sont requis" }),
+        JSON.stringify({ error: "user_id(s) et title requis" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get user's push subscriptions
+    // Get push subscriptions for all target users
     const { data: subscriptions, error: subError } = await supabase
       .from("push_subscriptions")
       .select("*")
-      .eq("user_id", user_id);
+      .in("user_id", targetUserIds);
 
     if (subError) throw subError;
 
@@ -164,7 +156,7 @@ Deno.serve(async (req) => {
 
     const payload = JSON.stringify({
       title,
-      body: body || "",
+      body: msgBody || "",
       icon: "/favicon.png",
       url: url || "/notifications",
       tag: tag || "domia-notification",
@@ -173,41 +165,34 @@ Deno.serve(async (req) => {
     let sent = 0;
     const errors: string[] = [];
 
-    for (const sub of subscriptions) {
-      try {
-        const response = await sendWebPush(
-          { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-          payload,
-          vapidPublicKey,
-          vapidPrivateKey,
-          "mailto:contact@domia.ga"
-        );
+    // Send in parallel batches of 10
+    const batchSize = 10;
+    for (let i = 0; i < subscriptions.length; i += batchSize) {
+      const batch = subscriptions.slice(i, i + batchSize);
+      const results = await Promise.allSettled(
+        batch.map(async (sub) => {
+          const response = await sendWebPush(
+            { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+            payload,
+            vapidPublicKey,
+            vapidPrivateKey,
+            "mailto:contact@domia.ga"
+          );
 
-        if (response.ok || response.status === 201) {
-          sent++;
-        } else if (response.status === 410 || response.status === 404) {
-          // Subscription expired, remove it
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("id", sub.id);
-          errors.push(`Subscription expired, removed: ${sub.endpoint.slice(0, 50)}...`);
-        } else {
-          const text = await response.text();
-          errors.push(`Status ${response.status}: ${text.slice(0, 100)}`);
-        }
-      } catch (e) {
-        errors.push(`Error: ${e.message}`);
-      }
+          if (response.ok || response.status === 201) {
+            sent++;
+          } else if (response.status === 410 || response.status === 404) {
+            await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+          } else {
+            const text = await response.text();
+            errors.push(`${response.status}: ${text.slice(0, 80)}`);
+          }
+        })
+      );
     }
 
     return new Response(
-      JSON.stringify({
-        message: `${sent} notification(s) envoyée(s)`,
-        sent,
-        total: subscriptions.length,
-        errors: errors.length > 0 ? errors : undefined,
-      }),
+      JSON.stringify({ sent, total: subscriptions.length, errors: errors.length > 0 ? errors : undefined }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
