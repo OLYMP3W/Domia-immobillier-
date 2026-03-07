@@ -214,9 +214,21 @@ export const useCreateProperty = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+
+      // Broadcast push notification for new published property
+      if (data.is_published) {
+        supabase.functions.invoke('notify-new-property', {
+          body: {
+            property_id: data.id,
+            title: data.title,
+            city: data.city,
+            price: data.price,
+          },
+        }).catch(console.error);
+      }
     },
   });
 };
