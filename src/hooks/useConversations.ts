@@ -247,6 +247,17 @@ export const useSendMessageToConversation = () => {
         .update({ last_message_at: new Date().toISOString() })
         .eq('id', conversationId);
 
+      // Send push notification to receiver (fire-and-forget)
+      supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: receiverId,
+          title: 'Nouveau message',
+          body: content.length > 100 ? content.slice(0, 100) + '...' : content,
+          url: '/messages',
+          tag: `msg-${conversationId}`,
+        },
+      }).catch(console.error);
+
       return data;
     },
     onSuccess: (_, variables) => {

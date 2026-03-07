@@ -62,7 +62,6 @@ const EditProperty = () => {
     is_published: true,
   });
 
-  // Pré-remplir le formulaire avec les données existantes
   useEffect(() => {
     if (property) {
       setFormData({
@@ -86,7 +85,7 @@ const EditProperty = () => {
   if (authLoading || propertyLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -95,10 +94,11 @@ const EditProperty = () => {
     return <Navigate to="/" replace />;
   }
 
-  // Vérifier que l'utilisateur est le propriétaire
   if (property && property.owner_id !== user?.id) {
     return <Navigate to="/dashboard/owner" replace />;
   }
+
+  const isTerrain = formData.type === 'terrain';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,8 +122,8 @@ const EditProperty = () => {
         address: formData.address || null,
         type: formData.listing_type,
         price: parseInt(formData.price),
-        rooms: parseInt(formData.rooms),
-        bathrooms: parseInt(formData.bathrooms),
+        rooms: isTerrain ? 0 : parseInt(formData.rooms),
+        bathrooms: isTerrain ? 0 : parseInt(formData.bathrooms),
         surface: formData.surface ? parseInt(formData.surface) : null,
         is_premium: formData.is_premium,
         is_published: formData.is_published,
@@ -159,7 +159,7 @@ const EditProperty = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Home className="h-6 w-6 text-gold" />
+              <Home className="h-6 w-6 text-accent" />
               Modifier l'annonce
             </CardTitle>
             <CardDescription>
@@ -194,22 +194,11 @@ const EditProperty = () => {
                 <h3 className="text-lg font-semibold">Informations générales</h3>
                 <div>
                   <Label htmlFor="title">Titre de l'annonce *</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    className="mt-1"
-                  />
+                  <Input id="title" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} className="mt-1" />
                 </div>
                 <div>
                   <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="mt-1"
-                    rows={4}
-                  />
+                  <Textarea id="description" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} className="mt-1" rows={4} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -225,12 +214,7 @@ const EditProperty = () => {
                   </div>
                   <div>
                     <Label>Prix (CFA) * {formData.listing_type === 'rent' ? '/ mois' : ''}</Label>
-                    <Input
-                      type="number"
-                      value={formData.price}
-                      onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                      className="mt-1"
-                    />
+                    <Input type="number" value={formData.price} onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))} className="mt-1" />
                   </div>
                 </div>
               </div>
@@ -252,57 +236,48 @@ const EditProperty = () => {
                   </div>
                   <div>
                     <Label>Quartier</Label>
-                    <Input
-                      value={formData.neighborhood}
-                      onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
-                      className="mt-1"
-                    />
+                    <Input value={formData.neighborhood} onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))} className="mt-1" />
                   </div>
                 </div>
                 <div>
                   <Label>Adresse complète</Label>
-                  <Input
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    className="mt-1"
-                  />
+                  <Input value={formData.address} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} className="mt-1" />
                 </div>
               </div>
 
               {/* Caractéristiques */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Caractéristiques</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Pièces</Label>
-                    <Select value={formData.rooms} onValueChange={(v) => setFormData(prev => ({ ...prev, rooms: v }))}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                          <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Salles de bain</Label>
-                    <Select value={formData.bathrooms} onValueChange={(v) => setFormData(prev => ({ ...prev, bathrooms: v }))}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[1,2,3,4,5].map(n => (
-                          <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className={`grid gap-4 ${isTerrain ? 'grid-cols-1 max-w-xs' : 'grid-cols-3'}`}>
+                  {!isTerrain && (
+                    <>
+                      <div>
+                        <Label>Pièces</Label>
+                        <Select value={formData.rooms} onValueChange={(v) => setFormData(prev => ({ ...prev, rooms: v }))}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                              <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Salles de bain</Label>
+                        <Select value={formData.bathrooms} onValueChange={(v) => setFormData(prev => ({ ...prev, bathrooms: v }))}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {[1,2,3,4,5].map(n => (
+                              <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
                   <div>
                     <Label>Surface (m²)</Label>
-                    <Input
-                      type="number"
-                      value={formData.surface}
-                      onChange={(e) => setFormData(prev => ({ ...prev, surface: e.target.value }))}
-                      className="mt-1"
-                    />
+                    <Input type="number" value={formData.surface} onChange={(e) => setFormData(prev => ({ ...prev, surface: e.target.value }))} className="mt-1" />
                   </div>
                 </div>
               </div>
@@ -315,39 +290,22 @@ const EditProperty = () => {
                     <p className="font-medium">Annonce Premium</p>
                     <p className="text-sm text-muted-foreground">Mettez votre annonce en avant</p>
                   </div>
-                  <Switch
-                    checked={formData.is_premium}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_premium: checked }))}
-                  />
+                  <Switch checked={formData.is_premium} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_premium: checked }))} />
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <p className="font-medium">Publier</p>
                     <p className="text-sm text-muted-foreground">Rendre l'annonce visible</p>
                   </div>
-                  <Switch
-                    checked={formData.is_published}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_published: checked }))}
-                  />
+                  <Switch checked={formData.is_published} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_published: checked }))} />
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full gradient-gold"
-                size="lg"
-                disabled={updateProperty.isPending}
-              >
+              <Button type="submit" className="w-full gradient-gold" size="lg" disabled={updateProperty.isPending}>
                 {updateProperty.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Modification en cours...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Modification en cours...</>
                 ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Sauvegarder les modifications
-                  </>
+                  <><Save className="mr-2 h-4 w-4" />Sauvegarder les modifications</>
                 )}
               </Button>
             </form>
