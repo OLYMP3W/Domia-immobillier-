@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize, Send, MessageCircle, Eye, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize, Send, MessageCircle, Eye, ChevronLeft, Download } from 'lucide-react';
+import { sanitizePhoneNumbers } from '@/lib/phoneFilter';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -217,7 +218,7 @@ const PropertyDetail = () => {
             <div className="rounded-2xl border border-border/50 bg-card p-6">
               <h2 className="text-xl font-bold mb-4">Description</h2>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                {property.description || 'Aucune description disponible.'}
+                {property.description ? sanitizePhoneNumbers(property.description) : 'Aucune description disponible.'}
               </p>
             </div>
           </div>

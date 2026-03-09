@@ -44,7 +44,6 @@ export const ChatWindow = ({
   const [newMessage, setNewMessage] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   
@@ -152,14 +151,13 @@ export const ChatWindow = ({
                 {conversation.other_participant?.fullname?.charAt(0).toUpperCase() || '?'}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-card" />
           </div>
           
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-[15px] truncate leading-tight">
               {conversation.other_participant?.fullname || 'Utilisateur'}
             </h3>
-            <p className="text-[11px] text-green-600 font-medium">En ligne</p>
+            <p className="text-[11px] text-muted-foreground">Domia</p>
           </div>
         </Link>
 
@@ -234,11 +232,8 @@ export const ChatWindow = ({
         </Link>
       )}
 
-      {/* Messages area - fills remaining space */}
-      <div 
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-3 py-2 min-h-0"
-      >
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto px-3 py-2 min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -283,10 +278,10 @@ export const ChatWindow = ({
         )}
       </div>
 
-      {/* Input bar - stuck to bottom */}
-      <div className="shrink-0 px-2 py-1.5 border-t border-border/20 bg-card/98 backdrop-blur-xl"
-           style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 6px), 6px)' }}>
-        <div className="flex items-end gap-1.5">
+      {/* Input bar - fixed to bottom */}
+      <div className="shrink-0 px-3 py-2 border-t border-border/20 bg-card/98 backdrop-blur-xl"
+           style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
+        <div className="flex items-end gap-2">
           <div className="flex-1">
             <textarea
               ref={inputRef}
@@ -295,16 +290,16 @@ export const ChatWindow = ({
               onKeyDown={handleKeyDown}
               placeholder="Message..."
               rows={1}
-              className="w-full resize-none rounded-2xl border border-border/40 bg-muted/40 px-3.5 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground/50 max-h-[100px]"
+              className="w-full resize-none rounded-2xl border border-border/40 bg-muted/40 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50 max-h-[100px]"
               disabled={sendMessage.isPending}
-              style={{ minHeight: '36px' }}
+              style={{ minHeight: '40px' }}
             />
           </div>
           <Button
             onClick={handleSend}
             disabled={!newMessage.trim() || sendMessage.isPending}
             size="icon"
-            className={`h-9 w-9 rounded-full shrink-0 mb-0.5 transition-all ${
+            className={`h-10 w-10 rounded-full shrink-0 transition-all ${
               newMessage.trim() 
                 ? 'bg-accent text-accent-foreground shadow-md' 
                 : 'bg-muted text-muted-foreground'

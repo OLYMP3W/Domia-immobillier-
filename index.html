@@ -2,7 +2,7 @@
 <html lang="fr" translate="no">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#1f2d5a" />
     
     <!-- Empêcher la traduction Google et autres -->
@@ -105,9 +105,21 @@
         user-select: none;
         pointer-events: auto;
       }
-      /* Empêcher le copier-coller sur les images */
       img[draggable="false"] {
         -webkit-user-drag: none;
+      }
+      /* Empêcher la sélection de texte pour la traduction Google */
+      .notranslate {
+        -webkit-touch-callout: none;
+      }
+      /* Comportement natif - pas de highlight */
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      /* Empêcher le pull-to-refresh */
+      html, body {
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
       }
     </style>
   </head>
