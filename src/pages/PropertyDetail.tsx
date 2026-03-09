@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize, Send, MessageCircle, Eye, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, MapPin, Home, BedDouble, Calendar, Phone, Mail, Loader2, Bath, Maximize, Send, MessageCircle, Eye, ChevronLeft, Download } from 'lucide-react';
+import { sanitizePhoneNumbers } from '@/lib/phoneFilter';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
