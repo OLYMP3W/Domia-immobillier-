@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -15,7 +15,6 @@ interface PropertyMediaGridProps {
   className?: string;
 }
 
-// Détermine si un fichier est une vidéo basé sur l'URL
 const isVideoUrl = (url: string): boolean => {
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
   return videoExtensions.some(ext => url.toLowerCase().includes(ext));
@@ -26,7 +25,6 @@ export const PropertyMediaGrid = ({ media, title = 'Property', className = '' }:
 
   if (!media || media.length === 0) return null;
 
-  // Normalize media items
   const normalizedMedia = media.map(item => ({
     url: item.url,
     type: item.type || (isVideoUrl(item.url) ? 'video' : 'image'),
@@ -95,12 +93,12 @@ export const PropertyMediaGrid = ({ media, title = 'Property', className = '' }:
           onClose={() => setSelectedIndex(null)}
           onPrev={handlePrev}
           onNext={handleNext}
+          title={title}
         />
       </>
     );
   }
 
-  // Layout pour 2 images
   if (displayMedia.length === 2) {
     return (
       <>
@@ -111,90 +109,54 @@ export const PropertyMediaGrid = ({ media, title = 'Property', className = '' }:
             </div>
           ))}
         </div>
-        <MediaDialog 
-          media={normalizedMedia}
-          selectedIndex={selectedIndex}
-          onClose={() => setSelectedIndex(null)}
-          onPrev={handlePrev}
-          onNext={handleNext}
-        />
+        <MediaDialog media={normalizedMedia} selectedIndex={selectedIndex} onClose={() => setSelectedIndex(null)} onPrev={handlePrev} onNext={handleNext} title={title} />
       </>
     );
   }
 
-  // Layout pour 3 images: 1 grande à gauche, 2 petites à droite
   if (displayMedia.length === 3) {
     return (
       <>
         <div className={`grid grid-cols-2 gap-1 rounded-xl overflow-hidden aspect-[4/3] ${className}`}>
-          <div className="row-span-2">
-            {renderMediaItem(displayMedia[0], 0, 'h-full')}
-          </div>
+          <div className="row-span-2">{renderMediaItem(displayMedia[0], 0, 'h-full')}</div>
           <div className="grid grid-rows-2 gap-1">
             {displayMedia.slice(1, 3).map((item, index) => (
-              <div key={index + 1} className="overflow-hidden">
-                {renderMediaItem(item, index + 1)}
-              </div>
+              <div key={index + 1} className="overflow-hidden">{renderMediaItem(item, index + 1)}</div>
             ))}
           </div>
         </div>
-        <MediaDialog 
-          media={normalizedMedia}
-          selectedIndex={selectedIndex}
-          onClose={() => setSelectedIndex(null)}
-          onPrev={handlePrev}
-          onNext={handleNext}
-        />
+        <MediaDialog media={normalizedMedia} selectedIndex={selectedIndex} onClose={() => setSelectedIndex(null)} onPrev={handlePrev} onNext={handleNext} title={title} />
       </>
     );
   }
 
-  // Layout pour 4 images: grille 2x2
   if (displayMedia.length === 4) {
     return (
       <>
         <div className={`grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[4/3] ${className}`}>
           {displayMedia.map((item, index) => (
-            <div key={index} className="overflow-hidden">
-              {renderMediaItem(item, index)}
-            </div>
+            <div key={index} className="overflow-hidden">{renderMediaItem(item, index)}</div>
           ))}
         </div>
-        <MediaDialog 
-          media={normalizedMedia}
-          selectedIndex={selectedIndex}
-          onClose={() => setSelectedIndex(null)}
-          onPrev={handlePrev}
-          onNext={handleNext}
-        />
+        <MediaDialog media={normalizedMedia} selectedIndex={selectedIndex} onClose={() => setSelectedIndex(null)} onPrev={handlePrev} onNext={handleNext} title={title} />
       </>
     );
   }
 
-  // Layout style collage (5+ images) - 2 en haut, 3 en bas
   return (
     <>
       <div className={`grid grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[4/3] ${className}`}>
-        {/* Row 1: 2 images */}
         <div className="grid grid-cols-2 gap-1">
           {displayMedia.slice(0, 2).map((item, index) => (
-            <div key={index} className="relative overflow-hidden">
-              {renderMediaItem(item, index)}
-            </div>
+            <div key={index} className="relative overflow-hidden">{renderMediaItem(item, index)}</div>
           ))}
         </div>
-        
-        {/* Row 2: 3 images */}
         <div className="grid grid-cols-3 gap-1">
           {displayMedia.slice(2, 5).map((item, index) => (
             <div key={index + 2} className="relative overflow-hidden">
               {renderMediaItem(item, index + 2)}
-              {/* Overlay +X sur la dernière image si plus de 5 médias */}
               {index === 2 && remainingCount > 0 && (
-                <div 
-                  className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer"
-                  onClick={() => setSelectedIndex(4)}
-                >
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer" onClick={() => setSelectedIndex(4)}>
                   <span className="text-white text-2xl font-bold">+{remainingCount}</span>
                 </div>
               )}
@@ -202,85 +164,83 @@ export const PropertyMediaGrid = ({ media, title = 'Property', className = '' }:
           ))}
         </div>
       </div>
-
-      <MediaDialog 
-        media={normalizedMedia}
-        selectedIndex={selectedIndex}
-        onClose={() => setSelectedIndex(null)}
-        onPrev={handlePrev}
-        onNext={handleNext}
-      />
+      <MediaDialog media={normalizedMedia} selectedIndex={selectedIndex} onClose={() => setSelectedIndex(null)} onPrev={handlePrev} onNext={handleNext} title={title} />
     </>
   );
 };
 
-// Dialog pour afficher les médias en plein écran
+// Dialog plein écran avec bouton télécharger
 interface MediaDialogProps {
   media: { url: string; type: string }[];
   selectedIndex: number | null;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  title?: string;
 }
 
-const MediaDialog = ({ media, selectedIndex, onClose, onPrev, onNext }: MediaDialogProps) => {
+const MediaDialog = ({ media, selectedIndex, onClose, onPrev, onNext, title }: MediaDialogProps) => {
   if (selectedIndex === null) return null;
-
   const currentItem = media[selectedIndex];
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(currentItem.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title || 'image'}-${selectedIndex + 1}.${currentItem.type === 'video' ? 'mp4' : 'jpg'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(currentItem.url, '_blank');
+    }
+  };
 
   return (
     <Dialog open={selectedIndex !== null} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-5xl p-0 bg-black/95 border-0">
         <div className="relative w-full h-[80vh] flex items-center justify-center">
-          {/* Close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
-            onClick={onClose}
-          >
-            <X className="h-6 w-6" />
-          </Button>
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              onClick={handleDownload}
+              title="Télécharger"
+            >
+              <Download className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              onClick={onClose}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
 
-          {/* Navigation */}
           {media.length > 1 && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute left-4 z-10 text-white hover:bg-white/20 h-12 w-12"
-                onClick={onPrev}
-              >
+              <Button variant="ghost" size="icon" className="absolute left-4 z-10 text-white hover:bg-white/20 h-12 w-12" onClick={onPrev}>
                 <ChevronLeft className="h-8 w-8" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-4 z-10 text-white hover:bg-white/20 h-12 w-12"
-                onClick={onNext}
-              >
+              <Button variant="ghost" size="icon" className="absolute right-4 z-10 text-white hover:bg-white/20 h-12 w-12" onClick={onNext}>
                 <ChevronRight className="h-8 w-8" />
               </Button>
             </>
           )}
 
-          {/* Media content */}
           {currentItem.type === 'video' ? (
-            <video
-              src={currentItem.url}
-              controls
-              autoPlay
-              className="max-w-full max-h-full"
-            />
+            <video src={currentItem.url} controls autoPlay className="max-w-full max-h-full" />
           ) : (
-            <img
-              src={currentItem.url}
-              alt={`Media ${selectedIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
-            />
+            <img src={currentItem.url} alt={`Media ${selectedIndex + 1}`} className="max-w-full max-h-full object-contain" />
           )}
 
-          {/* Counter */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-3 py-1 rounded-full">
             {selectedIndex + 1} / {media.length}
           </div>

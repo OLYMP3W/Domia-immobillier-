@@ -105,9 +105,21 @@
         user-select: none;
         pointer-events: auto;
       }
-      /* Empêcher le copier-coller sur les images */
       img[draggable="false"] {
         -webkit-user-drag: none;
+      }
+      /* Empêcher la sélection de texte pour la traduction Google */
+      .notranslate {
+        -webkit-touch-callout: none;
+      }
+      /* Comportement natif - pas de highlight */
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      /* Empêcher le pull-to-refresh */
+      html, body {
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
       }
     </style>
   </head>

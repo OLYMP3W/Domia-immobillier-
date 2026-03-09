@@ -218,7 +218,7 @@ const PropertyDetail = () => {
             <div className="rounded-2xl border border-border/50 bg-card p-6">
               <h2 className="text-xl font-bold mb-4">Description</h2>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                {property.description || 'Aucune description disponible.'}
+                {property.description ? sanitizePhoneNumbers(property.description) : 'Aucune description disponible.'}
               </p>
             </div>
           </div>

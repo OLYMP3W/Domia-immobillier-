@@ -217,9 +217,18 @@ const CreateProperty = () => {
     try {
       setIsUploading(true);
 
+      // Sanitize phone numbers from description
+      const cleanDescription = formData.description ? sanitizePhoneNumbers(formData.description) : null;
+      if (formData.description && containsPhoneNumber(formData.description)) {
+        toast({
+          title: 'Numéro détecté',
+          description: 'Les numéros de téléphone dans la description ont été masqués pour votre sécurité.',
+        });
+      }
+
       const property = await createProperty.mutateAsync({
         title: formData.title,
-        description: formData.description || null,
+        description: cleanDescription,
         city: formData.city,
         neighborhood: formData.neighborhood || null,
         address: formData.address || null,

@@ -114,10 +114,18 @@ const EditProperty = () => {
     }
 
     try {
+      const cleanDescription = formData.description ? sanitizePhoneNumbers(formData.description) : null;
+      if (formData.description && containsPhoneNumber(formData.description)) {
+        toast({
+          title: 'Numéro détecté',
+          description: 'Les numéros de téléphone dans la description ont été masqués.',
+        });
+      }
+
       await updateProperty.mutateAsync({
         id,
         title: formData.title,
-        description: formData.description || null,
+        description: cleanDescription,
         city: formData.city,
         neighborhood: formData.neighborhood || null,
         address: formData.address || null,
