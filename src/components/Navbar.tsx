@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, User, LogOut, Bell, MessageSquare, Settings, Menu, Download } from 'lucide-react';
+import { Home, User, LogOut, Bell, MessageSquare, Settings, Menu, Download, Search, FileText, X, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -31,8 +31,6 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
   const { isInstalled } = usePWAInstall();
   
   const totalUnread = unreadMessages + unreadNotifications;
-  
-  // Cacher le bouton télécharger si déjà installé
   const showDownloadButton = !isInstalled;
 
   const handleMobileNavigation = (path: string) => {
@@ -114,18 +112,14 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
                   <Link to="/messages">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Messages
-                    {unreadMessages > 0 && (
-                      <Badge className="ml-auto" variant="secondary">{unreadMessages}</Badge>
-                    )}
+                    {unreadMessages > 0 && <Badge className="ml-auto" variant="secondary">{unreadMessages}</Badge>}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/notifications">
                     <Bell className="mr-2 h-4 w-4" />
                     Notifications
-                    {unreadNotifications > 0 && (
-                      <Badge className="ml-auto" variant="secondary">{unreadNotifications}</Badge>
-                    )}
+                    {unreadNotifications > 0 && <Badge className="ml-auto" variant="secondary">{unreadNotifications}</Badge>}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -153,123 +147,100 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
           )}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="rounded-full">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+            <SheetContent side="right" className="w-[300px] sm:w-[340px] p-0 border-l border-border/30">
               <div className="flex flex-col h-full">
-                <div className="flex items-center mb-6">
-                  <img src={logo} alt="Domia" className="h-16" draggable="false" />
+                {/* Header du menu */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
+                  <img src={logo} alt="Domia" className="h-12" draggable="false" />
                 </div>
 
                 {isAuthenticated ? (
                   <>
-                    <div className="flex items-center gap-3 p-4 bg-muted rounded-lg mb-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={profile?.avatar_url || ''} />
-                        <AvatarFallback className="bg-gold text-white">
-                          {profile?.fullname?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold">{profile?.fullname}</p>
-                        <p className="text-xs text-muted-foreground">{profile?.email}</p>
+                    {/* Profile card */}
+                    <div className="px-5 py-4">
+                      <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5">
+                        <Avatar className="h-12 w-12 ring-2 ring-accent/20">
+                          <AvatarImage src={profile?.avatar_url || ''} />
+                          <AvatarFallback className="bg-accent text-accent-foreground font-bold">
+                            {profile?.fullname?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate">{profile?.fullname}</p>
+                          <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
+                          <Badge variant="outline" className="mt-1 text-[10px] h-5">
+                            {role === 'owner' ? '🏠 Propriétaire' : '🔍 Locataire'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
 
-                    <nav className="flex flex-col gap-1 flex-1">
-                      <button
-                        onClick={() => handleMobileNavigation('/')}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                      >
-                        <Home className="h-5 w-5" />
-                        Accueil
-                      </button>
-                      <button
-                        onClick={() => handleMobileNavigation(role === 'owner' ? '/dashboard/owner' : '/dashboard/tenant')}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                      >
-                        <User className="h-5 w-5" />
-                        Tableau de bord
-                      </button>
-                      <button
-                        onClick={() => handleMobileNavigation('/messages')}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left w-full"
-                      >
-                        <MessageSquare className="h-5 w-5" />
-                        Messages
-                        {unreadMessages > 0 && (
-                          <Badge className="ml-auto">{unreadMessages}</Badge>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleMobileNavigation('/notifications')}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left w-full"
-                      >
-                        <Bell className="h-5 w-5" />
-                        Notifications
-                        {unreadNotifications > 0 && (
-                          <Badge className="ml-auto">{unreadNotifications}</Badge>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleMobileNavigation('/settings')}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                      >
-                        <Settings className="h-5 w-5" />
-                        Paramètres
-                      </button>
+                    {/* Navigation items */}
+                    <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+                      <MenuButton icon={Home} label="Accueil" onClick={() => handleMobileNavigation('/')} />
+                      <MenuButton icon={Search} label="Explorer" onClick={() => handleMobileNavigation('/properties')} />
+                      <MenuButton 
+                        icon={User} 
+                        label="Tableau de bord" 
+                        onClick={() => handleMobileNavigation(role === 'owner' ? '/dashboard/owner' : '/dashboard/tenant')} 
+                      />
+                      <MenuButton 
+                        icon={MessageSquare} 
+                        label="Messages" 
+                        badge={unreadMessages > 0 ? unreadMessages : undefined}
+                        onClick={() => handleMobileNavigation('/messages')} 
+                      />
+                      <MenuButton 
+                        icon={Bell} 
+                        label="Notifications" 
+                        badge={unreadNotifications > 0 ? unreadNotifications : undefined}
+                        onClick={() => handleMobileNavigation('/notifications')} 
+                      />
+                      <MenuButton icon={FileText} label="Blog" isNew onClick={() => handleMobileNavigation('/blog')} />
+                      <MenuButton icon={Settings} label="Paramètres" onClick={() => handleMobileNavigation('/settings')} />
                       {showDownloadButton && (
-                        <button
-                          onClick={() => handleMobileNavigation('/install')}
-                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                        >
-                          <Download className="h-5 w-5" />
-                          Télécharger l'app
-                        </button>
+                        <MenuButton icon={Download} label="Télécharger l'app" onClick={() => handleMobileNavigation('/install')} />
                       )}
                     </nav>
 
-                    <Button
-                      variant="destructive"
-                      className="mt-auto"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Déconnexion
-                    </Button>
+                    {/* Logout */}
+                    <div className="px-5 py-4 border-t border-border/30">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="mr-3 h-5 w-5" />
+                        Déconnexion
+                      </Button>
+                    </div>
                   </>
                 ) : (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col px-5 py-6 gap-3">
+                    <MenuButton icon={Search} label="Explorer" onClick={() => handleMobileNavigation('/properties')} />
+                    <MenuButton icon={FileText} label="Blog" isNew onClick={() => handleMobileNavigation('/blog')} />
                     {showDownloadButton && (
-                      <button
-                        onClick={() => handleMobileNavigation('/install')}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                      >
-                        <Download className="h-5 w-5" />
-                        Télécharger l'app
-                      </button>
+                      <MenuButton icon={Download} label="Télécharger l'app" onClick={() => handleMobileNavigation('/install')} />
                     )}
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        onOpenAuth?.('register');
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      S'inscrire
-                    </Button>
-                    <Button
-                      className="w-full gradient-gold"
-                      onClick={() => {
-                        onOpenAuth?.('login');
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      Se connecter
-                    </Button>
+                    <div className="mt-4 space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-xl h-11"
+                        onClick={() => { onOpenAuth?.('register'); setMobileMenuOpen(false); }}
+                      >
+                        S'inscrire
+                      </Button>
+                      <Button
+                        className="w-full gradient-gold rounded-xl h-11"
+                        onClick={() => { onOpenAuth?.('login'); setMobileMenuOpen(false); }}
+                      >
+                        Se connecter
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -280,3 +251,31 @@ export const Navbar = ({ onOpenAuth }: NavbarProps) => {
     </header>
   );
 };
+
+// Composant bouton du menu
+const MenuButton = ({ 
+  icon: Icon, label, badge, isNew, onClick 
+}: { 
+  icon: any; label: string; badge?: number; isNew?: boolean; onClick: () => void 
+}) => (
+  <button
+    onClick={onClick}
+    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted/80 active:scale-[0.98] transition-all text-left group"
+  >
+    <div className="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+      <Icon className="h-[18px] w-[18px] text-muted-foreground group-hover:text-primary transition-colors" />
+    </div>
+    <span className="flex-1 text-sm font-medium">{label}</span>
+    {isNew && (
+      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground">
+        NEW
+      </span>
+    )}
+    {badge !== undefined && badge > 0 && (
+      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-[10px] font-bold px-1.5">
+        {badge > 9 ? '9+' : badge}
+      </span>
+    )}
+    <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+  </button>
+);
