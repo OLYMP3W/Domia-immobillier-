@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { sanitizePhoneNumbers, containsPhoneNumber } from '@/lib/phoneFilter';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
