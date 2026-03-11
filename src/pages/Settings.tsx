@@ -39,6 +39,7 @@ const Settings = () => {
         fullname: profile.fullname || '',
         phone: profile.phone || '',
         whatsapp: (profile as any).whatsapp || '',
+        bio: (profile as any).bio || '',
       }));
     }
   }, [profile]);
