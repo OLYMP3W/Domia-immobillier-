@@ -255,6 +255,21 @@ const Settings = () => {
                     Les utilisateurs pourront vous contacter directement sur WhatsApp
                   </p>
                 </div>
+                <div>
+                  <Label htmlFor="bio">Bio / Description</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Décrivez-vous en quelques mots (ex: Agence immobilière à Libreville, spécialisée en locations...)"
+                    className="mt-1"
+                    rows={3}
+                    maxLength={300}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formData.bio.length}/300 · Visible sur votre profil public
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
