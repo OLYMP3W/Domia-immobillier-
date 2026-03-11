@@ -14,6 +14,7 @@ export interface PublicProfile {
   user_id: string;
   fullname: string;
   avatar_url: string | null;
+  bio: string | null;
   created_at: string;
   updated_at: string;
 }

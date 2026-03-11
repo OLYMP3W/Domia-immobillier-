@@ -6,11 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePublicProfile, useUserProperties } from '@/hooks/usePublicProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Loader2, MessageCircle, Home, Calendar, ArrowLeft } from 'lucide-react';
+import { Loader2, MessageCircle, Home, Calendar, ArrowLeft, MapPin, Star, Eye, Info } from 'lucide-react';
 
 const PublicProfile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -20,6 +21,8 @@ const PublicProfile = () => {
   const { data: properties = [], isLoading: propertiesLoading } = useUserProperties(userId || '');
 
   const isOwnProfile = user?.id === userId;
+
+  const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0);
 
   if (profileLoading) {
     return (
@@ -48,79 +51,105 @@ const PublicProfile = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-6">
         {/* Back button */}
-        <Button variant="ghost" asChild className="mb-6">
+        <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link to="/properties">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour aux annonces
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Retour
           </Link>
         </Button>
 
-        {/* Profile header */}
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-              <Avatar className="h-24 w-24">
+        {/* Profile Hero Card */}
+        <Card className="mb-6 overflow-hidden border-0 shadow-lg">
+          <div className="h-24 gradient-navy" />
+          <CardContent className="relative pt-0 pb-6">
+            <div className="flex flex-col items-center -mt-12">
+              <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                 <AvatarImage src={profile.avatar_url || ''} />
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                <AvatarFallback className="text-2xl gradient-gold text-accent-foreground font-bold">
                   {profile.fullname?.charAt(0).toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
               
-              <div className="flex-1 text-center md:text-left">
-                <h1 className="text-2xl font-bold mb-2">{profile.fullname}</h1>
-                
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Membre depuis {formatDistanceToNow(new Date(profile.created_at), { locale: fr })}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Home className="h-4 w-4" />
-                    {properties.length} annonce{properties.length > 1 ? 's' : ''}
-                  </div>
-                </div>
+              <h1 className="text-xl font-bold mt-3">{profile.fullname}</h1>
+              
+              {isOwnProfile && (
+                <Badge variant="outline" className="mt-1 text-xs">Votre profil</Badge>
+              )}
 
-                {!isOwnProfile && isAuthenticated && (
-                  <Button asChild>
-                    <Link to={`/messages?user=${userId}`}>
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Contacter
-                    </Link>
-                  </Button>
-                )}
-                
-                {isOwnProfile && (
-                  <Badge variant="outline">Votre profil</Badge>
-                )}
+              {profile.bio && (
+                <p className="text-sm text-muted-foreground text-center mt-2 max-w-md px-4">
+                  {profile.bio}
+                </p>
+              )}
+              
+              {/* Stats row */}
+              <div className="flex items-center gap-6 mt-4">
+                <div className="text-center">
+                  <p className="text-lg font-bold">{properties.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Annonces</p>
+                </div>
+                <div className="h-8 w-px bg-border" />
+                <div className="text-center">
+                  <p className="text-lg font-bold">{totalViews}</p>
+                  <p className="text-[11px] text-muted-foreground">Vues</p>
+                </div>
+                <div className="h-8 w-px bg-border" />
+                <div className="text-center">
+                  <p className="text-lg font-bold">
+                    {formatDistanceToNow(new Date(profile.created_at), { locale: fr })}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">Sur Domia</p>
+                </div>
               </div>
+
+              {/* Contact button */}
+              {!isOwnProfile && isAuthenticated && (
+                <Button asChild className="mt-4 gradient-gold">
+                  <Link to={`/messages?user=${userId}`}>
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Envoyer un message
+                  </Link>
+                </Button>
+              )}
+
+              {isOwnProfile && (
+                <Button variant="outline" size="sm" asChild className="mt-4">
+                  <Link to="/settings">Modifier le profil</Link>
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Properties section */}
+        {/* Listings */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Home className="h-5 w-5 text-primary" />
-            Annonces de {profile.fullname}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Home className="h-5 w-5 text-accent" />
+              Annonces ({properties.length})
+            </h2>
+          </div>
 
           {propertiesLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : properties.length === 0 ? (
-            <Card>
+            <Card className="border-dashed">
               <CardContent className="py-12 text-center">
-                <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  Aucune annonce publiée pour le moment
+                <Home className="h-12 w-12 mx-auto text-muted-foreground/40 mb-3" />
+                <p className="text-muted-foreground font-medium">
+                  Aucune annonce publiée
+                </p>
+                <p className="text-sm text-muted-foreground/60 mt-1">
+                  Les annonces de cet utilisateur apparaîtront ici
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {properties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
               ))}

@@ -100,13 +100,11 @@
       }
       /* Empêcher le téléchargement des images avec clic long */
       img {
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
         pointer-events: auto;
-      }
-      img[draggable="false"] {
-        -webkit-user-drag: none;
+        -webkit-user-drag: none !important;
       }
       /* Empêcher la sélection de texte pour la traduction Google */
       .notranslate {

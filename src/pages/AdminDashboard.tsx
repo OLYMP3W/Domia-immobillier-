@@ -16,7 +16,8 @@ import { fr } from 'date-fns/locale';
 import {
   Users, Home, Eye, Download, Shield, Trash2, CheckCircle, XCircle,
   Loader2, RefreshCw, Send, Bell, Activity, TrendingUp, MessageSquare,
-  BarChart3, Globe, Megaphone,
+  BarChart3, Globe, Megaphone, Search, UserX, ToggleLeft, ExternalLink,
+  AlertTriangle, Filter,
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -46,6 +47,8 @@ interface PropertyData {
   id: string;
   title: string;
   city: string;
+  price: number;
+  type: string;
   owner_name: string;
   owner_email: string;
   views: number;
@@ -74,6 +77,12 @@ const AdminDashboard = () => {
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [reports, setReports] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Search & filters
+  const [userSearch, setUserSearch] = useState('');
+  const [propertySearch, setPropertySearch] = useState('');
+  const [propertyFilter, setPropertyFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [userFilter, setUserFilter] = useState<'all' | 'owner' | 'tenant'>('all');
 
   // Broadcast state
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -127,6 +136,20 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleTogglePublish = async (propertyId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ is_published: !currentStatus })
+        .eq('id', propertyId);
+      if (error) throw error;
+      setProperties(prev => prev.map(p => p.id === propertyId ? { ...p, is_published: !currentStatus } : p));
+      toast({ title: !currentStatus ? 'Annonce publiée' : 'Annonce masquée' });
+    } catch (error: any) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const handleUpdateReportStatus = async (reportId: string, status: string) => {
     try {
       const response = await supabase.functions.invoke('admin-data', {
@@ -174,6 +197,25 @@ const AdminDashboard = () => {
   });
   const publishedProperties = properties.filter(p => p.is_published);
   const pendingReports = reports.filter(r => r.status === 'pending');
+
+  // Filtered data
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = !userSearch || 
+      u.fullname.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(userSearch.toLowerCase());
+    const matchesFilter = userFilter === 'all' || u.role === userFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredProperties = properties.filter(p => {
+    const matchesSearch = !propertySearch || 
+      p.title.toLowerCase().includes(propertySearch.toLowerCase()) ||
+      p.city.toLowerCase().includes(propertySearch.toLowerCase()) ||
+      p.owner_name?.toLowerCase().includes(propertySearch.toLowerCase());
+    const matchesFilter = propertyFilter === 'all' || 
+      (propertyFilter === 'published' ? p.is_published : !p.is_published);
+    return matchesSearch && matchesFilter;
+  });
 
   const statCards = [
     { icon: Users, label: 'Utilisateurs', value: stats?.totalUsers || 0, color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -224,11 +266,11 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        {/* Quick actions bar */}
+        {/* Alerts */}
         {pendingReports.length > 0 && (
           <div className="mb-6 rounded-xl bg-destructive/10 border border-destructive/20 p-4 flex items-center gap-3">
-            <Bell className="h-5 w-5 text-destructive" />
-            <span className="text-sm font-medium">{pendingReports.length} signalement(s) en attente</span>
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+            <span className="text-sm font-medium">{pendingReports.length} signalement(s) en attente de traitement</span>
           </div>
         )}
 
@@ -237,14 +279,151 @@ const AdminDashboard = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="broadcast">
+          <Tabs defaultValue="overview">
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
+              <TabsTrigger value="overview" className="gap-1"><BarChart3 className="h-3.5 w-3.5" /> Vue d'ensemble</TabsTrigger>
               <TabsTrigger value="broadcast" className="gap-1"><Megaphone className="h-3.5 w-3.5" /> Diffuser</TabsTrigger>
               <TabsTrigger value="users" className="gap-1"><Users className="h-3.5 w-3.5" /> Utilisateurs ({users.length})</TabsTrigger>
               <TabsTrigger value="properties" className="gap-1"><Home className="h-3.5 w-3.5" /> Annonces ({properties.length})</TabsTrigger>
-              <TabsTrigger value="reports" className="gap-1"><XCircle className="h-3.5 w-3.5" /> Signalements ({reports.length})</TabsTrigger>
-              <TabsTrigger value="analytics" className="gap-1"><BarChart3 className="h-3.5 w-3.5" /> Analytique</TabsTrigger>
+              <TabsTrigger value="reports" className="gap-1">
+                <XCircle className="h-3.5 w-3.5" /> Signalements
+                {pendingReports.length > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">{pendingReports.length}</Badge>
+                )}
+              </TabsTrigger>
             </TabsList>
+
+            {/* OVERVIEW TAB */}
+            <TabsContent value="overview">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <TrendingUp className="h-5 w-5 text-accent" /> Croissance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
+                      <span className="text-sm">Nouveaux utilisateurs (7j)</span>
+                      <span className="font-bold text-lg">{recentUsers.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
+                      <span className="text-sm">Taux de publication</span>
+                      <span className="font-bold text-lg">{stats?.totalProperties ? Math.round((publishedProperties.length / stats.totalProperties) * 100) : 0}%</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
+                      <span className="text-sm">Vues / Annonce</span>
+                      <span className="font-bold text-lg">{publishedProperties.length ? Math.round((stats?.totalViews || 0) / publishedProperties.length) : 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
+                      <span className="text-sm">Ratio propriétaires/locataires</span>
+                      <span className="font-bold text-lg">
+                        {stats?.totalOwners || 0}/{stats?.totalTenants || 0}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Activity className="h-5 w-5 text-accent" /> Répartition
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Propriétaires</span>
+                        <span className="font-semibold">{stats?.totalUsers ? Math.round((stats.totalOwners / stats.totalUsers) * 100) : 0}%</span>
+                      </div>
+                      <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${stats?.totalUsers ? (stats.totalOwners / stats.totalUsers) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Locataires</span>
+                        <span className="font-semibold">{stats?.totalUsers ? Math.round((stats.totalTenants / stats.totalUsers) * 100) : 0}%</span>
+                      </div>
+                      <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-violet-500 rounded-full transition-all" style={{ width: `${stats?.totalUsers ? (stats.totalTenants / stats.totalUsers) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 mt-4">
+                      <span className="text-sm">Signalements en attente</span>
+                      <Badge variant={pendingReports.length > 0 ? 'destructive' : 'secondary'}>
+                        {pendingReports.length}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Top properties */}
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Eye className="h-5 w-5 text-accent" /> Top annonces (par vues)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {[...properties].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5).map((p, i) => (
+                        <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-lg text-muted-foreground w-6">#{i + 1}</span>
+                            <div>
+                              <p className="font-medium text-sm truncate max-w-[200px]">{p.title}</p>
+                              <p className="text-xs text-muted-foreground">{p.city} · {p.owner_name}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-bold">{p.views || 0}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Recent activity */}
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <MessageSquare className="h-5 w-5 text-accent" /> Inscriptions récentes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {recentUsers.slice(0, 10).map((u) => (
+                        <div key={u.user_id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full gradient-gold flex items-center justify-center text-accent-foreground text-sm font-bold">
+                              {u.fullname?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-medium text-sm">{u.fullname}</span>
+                              <p className="text-xs text-muted-foreground">{u.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px]">
+                              {u.role === 'owner' ? 'Propriétaire' : 'Locataire'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(u.created_at), 'dd/MM', { locale: fr })}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {recentUsers.length === 0 && (
+                        <p className="text-center text-muted-foreground py-8">Aucune inscription récente</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
             {/* BROADCAST TAB */}
             <TabsContent value="broadcast">
@@ -309,9 +488,32 @@ const AdminDashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Utilisateurs inscrits</CardTitle>
-                  <CardDescription>Liste complète avec emails et rôles</CardDescription>
+                  <CardDescription>Recherchez et filtrez les utilisateurs</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Rechercher par nom ou email..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={userFilter} onValueChange={(v: any) => setUserFilter(v)}>
+                      <SelectTrigger className="w-full sm:w-[160px]">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous</SelectItem>
+                        <SelectItem value="owner">Propriétaires</SelectItem>
+                        <SelectItem value="tenant">Locataires</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{filteredUsers.length} résultat(s)</p>
                   <ScrollArea className="h-[500px]">
                     <Table>
                       <TableHeader>
@@ -320,10 +522,11 @@ const AdminDashboard = () => {
                           <TableHead>Email</TableHead>
                           <TableHead>Rôle</TableHead>
                           <TableHead>Inscription</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {users.map((u) => (
+                        {filteredUsers.map((u) => (
                           <TableRow key={u.user_id}>
                             <TableCell className="font-medium">{u.fullname}</TableCell>
                             <TableCell className="text-sm">{u.email}</TableCell>
@@ -334,6 +537,13 @@ const AdminDashboard = () => {
                             </TableCell>
                             <TableCell className="text-sm">
                               {format(new Date(u.created_at), 'dd/MM/yyyy', { locale: fr })}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" asChild>
+                                <a href={`/profile/${u.user_id}`} target="_blank" rel="noopener noreferrer">
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -349,9 +559,32 @@ const AdminDashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Toutes les annonces</CardTitle>
-                  <CardDescription>Gérez les annonces de la plateforme</CardDescription>
+                  <CardDescription>Gérez, publiez ou masquez les annonces</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Rechercher par titre, ville, propriétaire..."
+                        value={propertySearch}
+                        onChange={(e) => setPropertySearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={propertyFilter} onValueChange={(v: any) => setPropertyFilter(v)}>
+                      <SelectTrigger className="w-full sm:w-[160px]">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes</SelectItem>
+                        <SelectItem value="published">Publiées</SelectItem>
+                        <SelectItem value="draft">Brouillons</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{filteredProperties.length} résultat(s)</p>
                   <ScrollArea className="h-[500px]">
                     <Table>
                       <TableHeader>
@@ -365,7 +598,7 @@ const AdminDashboard = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {properties.map((property) => (
+                        {filteredProperties.map((property) => (
                           <TableRow key={property.id}>
                             <TableCell className="font-medium max-w-[200px] truncate">{property.title}</TableCell>
                             <TableCell>{property.city}</TableCell>
@@ -377,25 +610,40 @@ const AdminDashboard = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Supprimer cette annonce ?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      L'annonce "{property.title}" sera définitivement supprimée.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteProperty(property.id)} className="bg-destructive text-destructive-foreground">
-                                      Supprimer
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTogglePublish(property.id, property.is_published)}
+                                  title={property.is_published ? 'Masquer' : 'Publier'}
+                                >
+                                  <ToggleLeft className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" asChild>
+                                  <a href={`/property/${property.id}`} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Supprimer cette annonce ?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        L'annonce "{property.title}" sera définitivement supprimée.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteProperty(property.id)} className="bg-destructive text-destructive-foreground">
+                                        Supprimer
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -411,11 +659,14 @@ const AdminDashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Signalements</CardTitle>
-                  <CardDescription>Gérez les annonces signalées</CardDescription>
+                  <CardDescription>Gérez les annonces signalées par les utilisateurs</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {reports.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">Aucun signalement</div>
+                    <div className="text-center py-12 text-muted-foreground">
+                      <CheckCircle className="h-12 w-12 mx-auto mb-3 text-emerald-500/40" />
+                      <p>Aucun signalement</p>
+                    </div>
                   ) : (
                     <ScrollArea className="h-[500px]">
                       <Table>
@@ -447,11 +698,16 @@ const AdminDashboard = () => {
                               <TableCell>{format(new Date(report.created_at), 'dd/MM/yyyy', { locale: fr })}</TableCell>
                               <TableCell>
                                 <div className="flex gap-1">
-                                  <Button size="sm" variant="outline" onClick={() => handleUpdateReportStatus(report.id, 'reviewed')}>
+                                  <Button size="sm" variant="outline" onClick={() => handleUpdateReportStatus(report.id, 'reviewed')} title="Marquer examiné">
                                     <CheckCircle className="h-4 w-4" />
                                   </Button>
-                                  <Button size="sm" variant="outline" onClick={() => handleUpdateReportStatus(report.id, 'dismissed')}>
+                                  <Button size="sm" variant="outline" onClick={() => handleUpdateReportStatus(report.id, 'dismissed')} title="Rejeter">
                                     <XCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" asChild>
+                                    <a href={`/property/${report.property_id}`} target="_blank" rel="noopener noreferrer">
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
                                   </Button>
                                 </div>
                               </TableCell>
@@ -463,98 +719,6 @@ const AdminDashboard = () => {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* ANALYTICS TAB */}
-            <TabsContent value="analytics">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-accent" /> Croissance
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
-                      <span className="text-sm">Nouveaux utilisateurs (7 jours)</span>
-                      <span className="font-bold text-lg">{recentUsers.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
-                      <span className="text-sm">Taux de publication</span>
-                      <span className="font-bold text-lg">{stats?.totalProperties ? Math.round((publishedProperties.length / stats.totalProperties) * 100) : 0}%</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
-                      <span className="text-sm">Vues / Annonce</span>
-                      <span className="font-bold text-lg">{publishedProperties.length ? Math.round((stats?.totalViews || 0) / publishedProperties.length) : 0}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-accent" /> Répartition
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
-                      <span className="text-sm">Propriétaires</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${stats?.totalUsers ? (stats.totalOwners / stats.totalUsers) * 100 : 0}%` }} />
-                        </div>
-                        <span className="font-bold text-sm">{stats?.totalUsers ? Math.round((stats.totalOwners / stats.totalUsers) * 100) : 0}%</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
-                      <span className="text-sm">Locataires</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-violet-500 rounded-full" style={{ width: `${stats?.totalUsers ? (stats.totalTenants / stats.totalUsers) * 100 : 0}%` }} />
-                        </div>
-                        <span className="font-bold text-sm">{stats?.totalUsers ? Math.round((stats.totalTenants / stats.totalUsers) * 100) : 0}%</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
-                      <span className="text-sm">Signalements en attente</span>
-                      <Badge variant={pendingReports.length > 0 ? 'destructive' : 'secondary'}>
-                        {pendingReports.length}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="md:col-span-2">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5 text-accent" /> Activité récente
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {recentUsers.slice(0, 10).map((u) => (
-                        <div key={u.user_id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                          <div>
-                            <span className="font-medium text-sm">{u.fullname}</span>
-                            <span className="text-xs text-muted-foreground ml-2">{u.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {u.role === 'owner' ? 'Propriétaire' : 'Locataire'}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(u.created_at), 'dd/MM', { locale: fr })}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                      {recentUsers.length === 0 && (
-                        <p className="text-center text-muted-foreground py-8">Aucune inscription récente</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </TabsContent>
           </Tabs>
         )}
