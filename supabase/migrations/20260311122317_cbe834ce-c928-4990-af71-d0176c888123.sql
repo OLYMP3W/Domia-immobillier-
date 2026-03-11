@@ -1,0 +1,1 @@
+ALTER TABLE public.public_profiles ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT '';
