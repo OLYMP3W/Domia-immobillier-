@@ -4,6 +4,7 @@ import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,6 +27,7 @@ const Settings = () => {
     fullname: '',
     phone: '',
     whatsapp: '',
+    bio: '',
     email_notifications: true,
     push_notifications: true,
   });
@@ -38,6 +40,7 @@ const Settings = () => {
         fullname: profile.fullname || '',
         phone: profile.phone || '',
         whatsapp: (profile as any).whatsapp || '',
+        bio: (profile as any).bio || '',
       }));
     }
   }, [profile]);
@@ -130,7 +133,7 @@ const Settings = () => {
 
       await supabase
         .from('public_profiles')
-        .update({ fullname: formData.fullname })
+        .update({ fullname: formData.fullname, bio: formData.bio })
         .eq('user_id', user.id);
 
       await refreshProfile();
@@ -250,6 +253,21 @@ const Settings = () => {
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Les utilisateurs pourront vous contacter directement sur WhatsApp
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="bio">Bio / Description</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Décrivez-vous en quelques mots (ex: Agence immobilière à Libreville, spécialisée en locations...)"
+                    className="mt-1"
+                    rows={3}
+                    maxLength={300}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formData.bio.length}/300 · Visible sur votre profil public
                   </p>
                 </div>
               </div>
