@@ -133,7 +133,7 @@ const Settings = () => {
 
       await supabase
         .from('public_profiles')
-        .update({ fullname: formData.fullname })
+        .update({ fullname: formData.fullname, bio: formData.bio })
         .eq('user_id', user.id);
 
       await refreshProfile();
