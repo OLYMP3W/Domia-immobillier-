@@ -3,8 +3,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-// Clé VAPID publique générée - à remplacer par votre propre clé
-const VAPID_PUBLIC_KEY = 'BLNGIPFo5HRAKcHI5L_aX3PPXKqDyIZYCYZvDfjFOBi0CcvSGzFVXPs0o-_3h-75X8RzHkSN-33uh5s_c5somTM';
+// Fetch VAPID public key dynamically from edge function
+let cachedVapidKey: string | null = null;
+
+const getVapidPublicKey = async (): Promise<string | null> => {
+  if (cachedVapidKey) return cachedVapidKey;
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-vapid-keys', {
+      body: { action: 'get_public_key' },
+    });
+    if (data?.publicKey) {
+      cachedVapidKey = data.publicKey;
+      return data.publicKey;
+    }
+  } catch {}
+  // Fallback hardcoded key
+  return 'BLNGIPFo5HRAKcHI5L_aX3PPXKqDyIZYCYZvDfjFOBi0CcvSGzFVXPs0o-_3h-75X8RzHkSN-33uh5s_c5somTM';
+};
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
