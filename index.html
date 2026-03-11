@@ -125,5 +125,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Empêcher le menu contextuel sur les images (comportement natif)
+      document.addEventListener('contextmenu', function(e) {
+        if (e.target && e.target.tagName === 'IMG') {
+          e.preventDefault();
+        }
+      }, true);
+    </script>
   </body>
 </html>
