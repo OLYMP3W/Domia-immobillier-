@@ -93,9 +93,12 @@ export const usePushNotifications = () => {
       await navigator.serviceWorker.ready;
 
       // S'abonner aux push
+      const vapidKey = await getVapidPublicKey();
+      if (!vapidKey) return false;
+
       const subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
       const keys = subscription.toJSON();
