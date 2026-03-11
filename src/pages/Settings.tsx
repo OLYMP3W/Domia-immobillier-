@@ -26,6 +26,7 @@ const Settings = () => {
     fullname: '',
     phone: '',
     whatsapp: '',
+    bio: '',
     email_notifications: true,
     push_notifications: true,
   });
